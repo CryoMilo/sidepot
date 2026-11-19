@@ -142,6 +142,11 @@ export default function WalletDeck({
               <span>Casino Chips</span>
             </div>
           )}
+          {isCommitted && currentBet > 0 && (
+            <span className="text-[10px] font-black text-[#16A34A] bg-[#DCFCE7] px-2 py-0.5 rounded-lg border border-[#86EFAC]">
+              Bet: {currentBet}
+            </span>
+          )}
         </div>
 
         {/* Transfer / QR Debts Button */}
