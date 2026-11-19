@@ -153,25 +153,39 @@ export function resolvePlayerBet(state: TableState, playerId: string, outcome: B
 export function rotateBanker(state: TableState, newBankerId: string): TableState {
   if (!state.players[newBankerId]) return state;
 
+  let potDelta = 0;
+
   const updatedPlayers: Record<string, Player> = {};
   for (const [id, p] of Object.entries(state.players)) {
-    updatedPlayers[id] = {
-      ...p,
-      isBanker: id === newBankerId,
-      currentBet: id === newBankerId ? 0 : p.currentBet,
-    };
+    if (id === newBankerId) {
+      // If newly crowned banker had an active bet, refund it to their stack
+      const refundedBet = p.currentBet;
+      potDelta += refundedBet;
+      updatedPlayers[id] = {
+        ...p,
+        isBanker: true,
+        chips: p.chips + refundedBet,
+        currentBet: 0,
+      };
+    } else {
+      updatedPlayers[id] = {
+        ...p,
+        isBanker: false,
+      };
+    }
   }
 
   return {
     ...state,
     bankerId: newBankerId,
+    pot: Math.max(0, state.pot - potDelta),
     players: updatedPlayers,
   };
 }
 
 export function advancePhase(state: TableState, nextPhase: TablePhase): TableState {
   let nextRound = state.roundNumber;
-  if (nextPhase === 'BETTING' && state.phase === 'ROUND_SUMMARY') {
+  if (nextPhase === 'BETTING') {
     nextRound += 1;
   }
 

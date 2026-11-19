@@ -144,14 +144,25 @@ describe('Game Engine & Ledger', () => {
     expect(verifyZeroSum(table).balanced).toBe(true);
   });
 
-  it('advances phases properly', () => {
+  it('advances phases and increments round number when starting next round', () => {
     let table = createInitialTable('7K92', 'Ko Aung', 5000);
-    expect(table.phase).toBe('BETTING');
-    table = advancePhase(table, 'DEALING');
-    expect(table.phase).toBe('DEALING');
-    table = advancePhase(table, 'RESOLVING');
-    expect(table.phase).toBe('RESOLVING');
-    table = advancePhase(table, 'ROUND_SUMMARY');
-    expect(table.phase).toBe('ROUND_SUMMARY');
+    expect(table.roundNumber).toBe(1);
+    table = advancePhase(table, 'BETTING');
+    expect(table.roundNumber).toBe(2);
+  });
+
+  it('refunds active bet when player is rotated into banker mid-round', () => {
+    let table = createInitialTable('7K92', 'Ko Aung', 5000);
+    table = addPlayer(table, 'p2', 'Min Min');
+    table = placeBet(table, 'p2', 1000);
+    expect(table.pot).toBe(1000);
+    expect(table.players['p2'].chips).toBe(4000);
+
+    table = rotateBanker(table, 'p2');
+    // Bet must be refunded: 4000 + 1000 = 5000, pot back to 0
+    expect(table.players['p2'].chips).toBe(5000);
+    expect(table.players['p2'].currentBet).toBe(0);
+    expect(table.pot).toBe(0);
+    expect(verifyZeroSum(table).balanced).toBe(true);
   });
 });

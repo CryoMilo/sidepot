@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Wallet, ArrowUp, PlusCircle } from 'lucide-react';
+import { Wallet, ArrowUp, PlusCircle, Crown } from 'lucide-react';
 import DraggableChip from './DraggableChip';
 
 interface WalletDeckProps {
@@ -56,8 +56,9 @@ export default function WalletDeck({
           <span>Drag or flick a chip UP into the Golden Jar</span>
         </div>
       ) : (
-        <div className="text-center text-[11px] font-extrabold text-[#D97706] bg-[#FEF3C7] py-1.5 rounded-xl my-2">
-          👑 You are the Banker! You collect & pay bets from your stack.
+        <div className="flex items-center justify-center gap-1.5 text-center text-[11px] font-extrabold text-[#D97706] bg-[#FEF3C7] py-1.5 rounded-xl my-2">
+          <Crown className="w-3.5 h-3.5 text-[#D97706]" />
+          <span>You are the Banker! You collect & pay bets from your stack.</span>
         </div>
       )}
 

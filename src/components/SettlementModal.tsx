@@ -1,6 +1,7 @@
 import { useEffect } from 'react';
 import { TableState } from '../types';
-import { Trophy, TrendingUp, TrendingDown, CheckCircle2, X } from 'lucide-react';
+import { Trophy, TrendingUp, TrendingDown, CheckCircle2, AlertTriangle, X } from 'lucide-react';
+import { verifyZeroSum } from '../utils/gameEngine';
 import confetti from 'canvas-confetti';
 
 interface SettlementModalProps {
@@ -9,18 +10,23 @@ interface SettlementModalProps {
 }
 
 export default function SettlementModal({ state, onClose }: SettlementModalProps) {
+  const { balanced, netDiscrepancy } = verifyZeroSum(state);
+  const isPotUnsettled = state.pot > 0;
+
   useEffect(() => {
-    try {
-      confetti({
-        particleCount: 80,
-        spread: 70,
-        origin: { y: 0.6 },
-        colors: ['#F59E0B', '#FDE047', '#38BDF8', '#FB7185'],
-      });
-    } catch {
-      // ignore in test / headless
+    if (balanced && !isPotUnsettled) {
+      try {
+        confetti({
+          particleCount: 80,
+          spread: 70,
+          origin: { y: 0.6 },
+          colors: ['#F59E0B', '#FDE047', '#38BDF8', '#FB7185'],
+        });
+      } catch {
+        // ignore in test / headless
+      }
     }
-  }, []);
+  }, [balanced, isPotUnsettled]);
 
   const playerStats = Object.values(state.players).map(p => {
     const netProfit = p.chips - p.totalBuyIn;
@@ -53,8 +59,21 @@ export default function SettlementModal({ state, onClose }: SettlementModalProps
           </p>
         </div>
 
+        {/* Unsettled Pot Warning */}
+        {isPotUnsettled && (
+          <div className="bg-[#FEF2F2] border border-[#FECACA] rounded-2xl p-3 mb-4 flex items-center gap-2.5 text-xs font-extrabold text-[#991B1B]">
+            <AlertTriangle className="w-5 h-5 text-[#DC2626] shrink-0" />
+            <div>
+              <div>Unresolved Pot: ${state.pot.toLocaleString()}</div>
+              <div className="text-[10px] text-[#B91C1C] font-semibold mt-0.5">
+                Active bets are still on the table. The banker must resolve all hands before final payout settlement.
+              </div>
+            </div>
+          </div>
+        )}
+
         {/* Top Winner Highlight */}
-        {topWinner && topWinner.netProfit > 0 && (
+        {topWinner && topWinner.netProfit > 0 && !isPotUnsettled && (
           <div className="bg-gradient-to-r from-[#FEF3C7] to-[#FDE68A] rounded-2xl p-3 border border-[#FCD34D] flex items-center justify-between mb-4 shadow-sm">
             <div className="flex items-center gap-2">
               <span className="text-xs font-black text-[#78350F]">Night's MVP:</span>
@@ -114,10 +133,18 @@ export default function SettlementModal({ state, onClose }: SettlementModalProps
         </div>
 
         {/* Zero-Sum Balance Proof */}
-        <div className="bg-[#ECFDF5] border border-[#A7F3D0] rounded-2xl p-3 text-center flex items-center justify-center gap-2 text-xs font-black text-[#065F46]">
-          <CheckCircle2 className="w-4 h-4 text-[#059669]" />
-          <span>Zero-Sum Verified: All chip tallies match 100%</span>
-        </div>
+        {balanced && !isPotUnsettled ? (
+          <div className="bg-[#ECFDF5] border border-[#A7F3D0] rounded-2xl p-3 text-center flex items-center justify-center gap-2 text-xs font-black text-[#065F46]">
+            <CheckCircle2 className="w-4 h-4 text-[#059669]" />
+            <span>Zero-Sum Verified: All chip tallies match 100%</span>
+          </div>
+        ) : (
+          <div className="bg-[#FFFBEB] border border-[#FDE68A] rounded-2xl p-2.5 text-center text-xs font-bold text-[#92400E]">
+            {isPotUnsettled
+              ? `Waiting on $${state.pot.toLocaleString()} in active table bets.`
+              : `Discrepancy: $${netDiscrepancy.toLocaleString()}`}
+          </div>
+        )}
       </div>
     </div>
   );

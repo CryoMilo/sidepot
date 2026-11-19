@@ -1,26 +1,33 @@
 import { TableState, BetOutcome } from '../types';
-import { Crown, Zap, Flame, ShieldCheck, CheckCheck } from 'lucide-react';
+import { Crown, Zap, Flame, ShieldCheck, CheckCheck, AlertCircle, PlusCircle } from 'lucide-react';
 import { playSound } from '../utils/audio';
 
 interface BankerControlsProps {
   state: TableState;
   isCurrentPlayerBanker: boolean;
+  isHost: boolean;
   onResolveBet: (playerId: string, outcome: BetOutcome) => void;
   onRotateBanker: (newBankerId: string) => void;
   onAdvancePhase: (nextPhase: any) => void;
+  onTopUpBanker: (amount: number) => void;
 }
 
 export default function BankerControls({
   state,
   isCurrentPlayerBanker,
+  isHost,
   onResolveBet,
   onRotateBanker,
   onAdvancePhase,
+  onTopUpBanker,
 }: BankerControlsProps) {
   const activeBanker = state.players[state.bankerId];
   const activeBetPlayers = Object.values(state.players).filter(
     p => !p.isBanker && p.currentBet > 0
   );
+
+  const canManageBanker = isHost || isCurrentPlayerBanker;
+  const isBankerDepleted = activeBanker ? activeBanker.chips <= 0 : false;
 
   const handleResolve = (playerId: string, outcome: BetOutcome) => {
     if (outcome === 'COLLECT') playSound('pop');
@@ -56,25 +63,54 @@ export default function BankerControls({
             <div className="text-xs font-black text-[#78350F]">
               Banker: {activeBanker ? activeBanker.name : 'Unknown'}
             </div>
-            <div className="text-[10px] font-bold text-[#92400E]">
+            <div
+              className={`text-[10px] font-black ${
+                isBankerDepleted ? 'text-[#DC2626]' : 'text-[#92400E]'
+              }`}
+            >
               Stack: ${activeBanker ? activeBanker.chips.toLocaleString() : 0}
             </div>
           </div>
         </div>
 
-        {/* Rotate Banker Control */}
-        <select
-          value={state.bankerId}
-          onChange={e => onRotateBanker(e.target.value)}
-          className="text-xs font-extrabold bg-white border border-[#FCD34D] text-[#78350F] py-1 px-2.5 rounded-xl shadow-sm focus:outline-none focus:ring-2 focus:ring-[#F59E0B]"
-        >
-          {Object.values(state.players).map(p => (
-            <option key={p.id} value={p.id}>
-              Crown {p.name}
-            </option>
-          ))}
-        </select>
+        {/* Rotate Banker Control - Restricted to Host or Active Banker */}
+        {canManageBanker ? (
+          <select
+            value={state.bankerId}
+            onChange={e => onRotateBanker(e.target.value)}
+            className="text-xs font-extrabold bg-white border border-[#FCD34D] text-[#78350F] py-1 px-2.5 rounded-xl shadow-sm focus:outline-none focus:ring-2 focus:ring-[#F59E0B]"
+          >
+            {Object.values(state.players).map(p => (
+              <option key={p.id} value={p.id}>
+                Crown {p.name}
+              </option>
+            ))}
+          </select>
+        ) : (
+          <span className="text-[10px] font-bold text-[#92400E] bg-[#FEF3C7] px-2.5 py-1 rounded-lg border border-[#FCD34D]">
+            Active Dealer
+          </span>
+        )}
       </div>
+
+      {/* Banker Depleted Warning */}
+      {isBankerDepleted && (
+        <div className="bg-[#FEF2F2] border border-[#FECACA] rounded-2xl p-2.5 mb-3 flex items-center justify-between gap-2">
+          <div className="flex items-center gap-1.5 text-xs font-black text-[#991B1B]">
+            <AlertCircle className="w-4 h-4 text-[#DC2626]" />
+            <span>Bankroll Depleted!</span>
+          </div>
+          {isCurrentPlayerBanker && (
+            <button
+              onClick={() => onTopUpBanker(5000)}
+              className="text-[11px] font-black bg-[#DC2626] text-white px-2.5 py-1 rounded-xl flex items-center gap-1 hover:bg-[#B91C1C] transition-colors"
+            >
+              <PlusCircle className="w-3.5 h-3.5" />
+              <span>+$5k Rebuy</span>
+            </button>
+          )}
+        </div>
+      )}
 
       {/* Bets to Resolve */}
       <div className="space-y-3">
@@ -103,14 +139,16 @@ export default function BankerControls({
             <CheckCheck className="w-6 h-6 text-[#16A34A] mx-auto mb-1" />
             <div className="text-xs font-black text-[#78350F]">All bets resolved!</div>
             <p className="text-[11px] text-[#92400E] mt-0.5">
-              Ready to start next hand or deal cards.
+              Ready to deal physical cards or start next hand.
             </p>
-            <button
-              onClick={() => onAdvancePhase('BETTING')}
-              className="mt-3 text-xs font-black bg-[#F59E0B] hover:bg-[#D97706] text-white px-4 py-2 rounded-xl shadow-sm transition-transform active:scale-95"
-            >
-              Start Next Round #{state.roundNumber + 1}
-            </button>
+            {canManageBanker && (
+              <button
+                onClick={() => onAdvancePhase('BETTING')}
+                className="mt-3 text-xs font-black bg-[#F59E0B] hover:bg-[#D97706] text-white px-4 py-2 rounded-xl shadow-sm transition-transform active:scale-95"
+              >
+                Start Next Round #{state.roundNumber + 1}
+              </button>
+            )}
           </div>
         ) : (
           activeBetPlayers.map(player => (

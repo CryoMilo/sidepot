@@ -7,6 +7,7 @@ interface HeaderProps {
   onOpenQr: () => void;
   onOpenSettlement: () => void;
   onLeaveRoom: () => void;
+  onReconnect?: () => void;
 }
 
 export default function Header({
@@ -16,6 +17,7 @@ export default function Header({
   onOpenQr,
   onOpenSettlement,
   onLeaveRoom,
+  onReconnect,
 }: HeaderProps) {
   return (
     <header className="flex items-center justify-between w-full max-w-md mx-auto py-2 px-1 mb-2">
@@ -43,16 +45,25 @@ export default function Header({
         </div>
 
         {/* Connection status indicator */}
-        <div
-          title={isConnected ? 'P2P Connected' : 'Reconnecting...'}
-          className={`flex items-center gap-1 text-[10px] font-bold px-2 py-1 rounded-full border ${
+        <button
+          onClick={onReconnect}
+          disabled={isConnected}
+          title={isConnected ? 'P2P Connected' : 'Disconnected — click to reconnect'}
+          className={`flex items-center gap-1 text-[10px] font-bold px-2 py-1 rounded-full border transition-all ${
             isConnected
-              ? 'bg-[#ECFDF5] text-[#059669] border-[#A7F3D0]'
-              : 'bg-[#FEF2F2] text-[#DC2626] border-[#FECACA]'
+              ? 'bg-[#ECFDF5] text-[#059669] border-[#A7F3D0] cursor-default'
+              : 'bg-[#FEF2F2] text-[#DC2626] border-[#FECACA] hover:bg-[#FEE2E2] active:scale-95 cursor-pointer'
           }`}
         >
-          {isConnected ? <Wifi className="w-3 h-3" /> : <WifiOff className="w-3 h-3" />}
-        </div>
+          {isConnected ? (
+            <Wifi className="w-3 h-3" />
+          ) : (
+            <>
+              <WifiOff className="w-3 h-3" />
+              <span className="hidden xs:inline">Reconnect</span>
+            </>
+          )}
+        </button>
       </div>
 
       {/* Right Controls */}

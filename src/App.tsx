@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { TableState, BetOutcome } from './types';
 import {
   createInitialTable,
@@ -27,6 +27,8 @@ import SettlementModal from './components/SettlementModal';
 import { playSound } from './utils/audio';
 import Peer, { DataConnection } from 'peerjs';
 
+const CLIENT_SESSION_KEY = 'sidepot_client_session';
+
 export default function App() {
   const [tableState, setTableState] = useState<TableState | null>(null);
   const [myPlayerId, setMyPlayerId] = useState<string>('');
@@ -44,33 +46,7 @@ export default function App() {
   const hostConnectionsRef = useRef<DataConnection[]>([]);
   const clientConnectionRef = useRef<DataConnection | null>(null);
 
-  // Auto-restore host state on page refresh if saved
-  useEffect(() => {
-    const saved = loadStateFromStorage();
-    const urlParams = new URLSearchParams(window.location.search);
-    const roomFromUrl = urlParams.get('room');
-
-    if (saved && saved.roomId) {
-      // Re-hydrate host
-      setTableState(saved);
-      setMyPlayerId(saved.hostId);
-      setIsHost(true);
-      startHostPeer(saved.roomId, saved);
-    } else if (roomFromUrl) {
-      // Prompt user to join from QR link
-      setRoomModalMode('JOIN');
-      setShowRoomModal(true);
-    } else {
-      setRoomModalMode('CREATE');
-      setShowRoomModal(true);
-    }
-
-    return () => {
-      cleanupPeer();
-    };
-  }, []);
-
-  const cleanupPeer = () => {
+  const cleanupPeer = useCallback(() => {
     if (clientConnectionRef.current) {
       clientConnectionRef.current.close();
       clientConnectionRef.current = null;
@@ -82,7 +58,7 @@ export default function App() {
       peerRef.current = null;
     }
     setIsConnected(false);
-  };
+  }, []);
 
   const triggerJarDance = () => {
     setIsJarDancing(true);
@@ -90,7 +66,7 @@ export default function App() {
   };
 
   // --- HOST PEER INITIALIZATION ---
-  const startHostPeer = (roomCode: string, initialTable: TableState) => {
+  const startHostPeer = useCallback((roomCode: string, initialTable: TableState) => {
     cleanupPeer();
     const formattedId = formatPeerId(roomCode);
     const peer = createPeerInstance(formattedId);
@@ -105,7 +81,6 @@ export default function App() {
       hostConnectionsRef.current.push(conn);
 
       conn.on('open', () => {
-        // Send full current state to newly joined client
         setTableState(current => {
           if (current) {
             conn.send({ type: 'SYNC_STATE', payload: current });
@@ -157,7 +132,6 @@ export default function App() {
             }
           }
 
-          // Broadcast updated state to all peers
           broadcastState(hostConnectionsRef.current, next);
           return next;
         });
@@ -168,16 +142,35 @@ export default function App() {
       });
     });
 
-    peer.on('error', err => {
+    peer.on('error', (err: any) => {
       console.warn('Host peer error:', err);
+      // Auto-resolve room code collision
+      if (err && (err.type === 'unavailable-id' || err.type === 'network')) {
+        const suffix = Math.random().toString(36).substring(2, 4).toUpperCase();
+        const fallbackRoom = `${roomCode}-${suffix}`;
+        const updatedTable = { ...initialTable, roomId: fallbackRoom };
+        setTableState(updatedTable);
+        setTimeout(() => startHostPeer(fallbackRoom, updatedTable), 500);
+      }
     });
-  };
+  }, [cleanupPeer]);
 
   // --- CLIENT PEER INITIALIZATION ---
-  const startClientPeer = (roomCode: string, playerName: string) => {
+  const startClientPeer = useCallback((roomCode: string, playerName: string, existingPlayerId?: string) => {
     cleanupPeer();
-    const myId = 'player-' + Math.random().toString(36).substring(2, 9);
+    const myId = existingPlayerId || ('player-' + Math.random().toString(36).substring(2, 9));
     setMyPlayerId(myId);
+
+    // Save client session so screen lock / refresh preserves identity
+    try {
+      sessionStorage.setItem(CLIENT_SESSION_KEY, JSON.stringify({
+        roomId: roomCode,
+        playerId: myId,
+        name: playerName,
+      }));
+    } catch {
+      // ignore
+    }
 
     const peer = createPeerInstance();
     peerRef.current = peer;
@@ -189,7 +182,6 @@ export default function App() {
 
       conn.on('open', () => {
         setIsConnected(true);
-        // Announce join
         conn.send({
           type: 'JOIN_TABLE',
           payload: { playerId: myId, name: playerName },
@@ -212,7 +204,73 @@ export default function App() {
       console.warn('Client peer error:', err);
       setIsConnected(false);
     });
-  };
+  }, [cleanupPeer]);
+
+  // Reconnection helper
+  const handleReconnect = useCallback(() => {
+    if (isHost && tableState) {
+      startHostPeer(tableState.roomId, tableState);
+    } else {
+      try {
+        const savedSession = sessionStorage.getItem(CLIENT_SESSION_KEY);
+        if (savedSession) {
+          const { roomId, playerId, name } = JSON.parse(savedSession);
+          startClientPeer(roomId, name, playerId);
+        }
+      } catch {
+        // ignore
+      }
+    }
+  }, [isHost, tableState, startHostPeer, startClientPeer]);
+
+  // Handle mobile wake up / tab visibility change
+  useEffect(() => {
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === 'visible' && !isConnected) {
+        handleReconnect();
+      }
+    };
+
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    return () => {
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+    };
+  }, [isConnected, handleReconnect]);
+
+  // Auto-restore on page load
+  useEffect(() => {
+    const saved = loadStateFromStorage();
+    const urlParams = new URLSearchParams(window.location.search);
+    const roomFromUrl = urlParams.get('room');
+
+    let clientSession: { roomId: string; playerId: string; name: string } | null = null;
+    try {
+      const raw = sessionStorage.getItem(CLIENT_SESSION_KEY);
+      if (raw) clientSession = JSON.parse(raw);
+    } catch {
+      // ignore
+    }
+
+    if (saved && saved.roomId) {
+      setTableState(saved);
+      setMyPlayerId(saved.hostId);
+      setIsHost(true);
+      startHostPeer(saved.roomId, saved);
+    } else if (clientSession && clientSession.roomId) {
+      setIsHost(false);
+      startClientPeer(clientSession.roomId, clientSession.name, clientSession.playerId);
+    } else if (roomFromUrl) {
+      setRoomModalMode('JOIN');
+      setShowRoomModal(true);
+    } else {
+      setRoomModalMode('CREATE');
+      setShowRoomModal(true);
+    }
+
+    return () => {
+      cleanupPeer();
+    };
+  }, [cleanupPeer, startHostPeer, startClientPeer]);
 
   // --- ACTIONS ---
   const handleCreateRoom = (roomCode: string, hostName: string, buyIn: number) => {
@@ -321,6 +379,11 @@ export default function App() {
 
   const handleLeaveRoom = () => {
     clearStateStorage();
+    try {
+      sessionStorage.removeItem(CLIENT_SESSION_KEY);
+    } catch {
+      // ignore
+    }
     cleanupPeer();
     setTableState(null);
     setMyPlayerId('');
@@ -349,6 +412,7 @@ export default function App() {
             }}
             onOpenSettlement={() => setShowSettlementModal(true)}
             onLeaveRoom={handleLeaveRoom}
+            onReconnect={handleReconnect}
           />
 
           {/* Golden Jar Display */}
@@ -359,13 +423,15 @@ export default function App() {
             onClick={triggerJarDance}
           />
 
-          {/* Banker Controls (Visible for resolution or active banker) */}
+          {/* Banker Controls */}
           <BankerControls
             state={tableState}
             isCurrentPlayerBanker={isCurrentBanker}
+            isHost={isHost}
             onResolveBet={handleResolveBet}
             onRotateBanker={handleRotateBanker}
             onAdvancePhase={handleAdvancePhase}
+            onTopUpBanker={handleTopUp}
           />
 
           {/* Player Wallet & Draggable Chips Rack */}
@@ -424,7 +490,7 @@ export default function App() {
       <RoomModal
         isOpen={showRoomModal}
         mode={roomModalMode}
-        currentRoomId={tableState?.roomId}
+        currentRoomId={tableState?.roomId || (typeof window !== 'undefined' ? new URLSearchParams(window.location.search).get('room') || '' : '')}
         onClose={() => {
           if (tableState) setShowRoomModal(false);
         }}
