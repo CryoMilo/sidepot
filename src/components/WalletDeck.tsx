@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { Wallet, ArrowUp, PlusCircle } from 'lucide-react';
 import DraggableChip from './DraggableChip';
 

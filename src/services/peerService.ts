@@ -3,6 +3,7 @@ import { TableState } from '../types';
 
 export type NetworkMessageType =
   | 'SYNC_STATE'
+  | 'JOIN_TABLE'
   | 'PLACE_BET'
   | 'RESOLVE_BET'
   | 'ROTATE_BANKER'
