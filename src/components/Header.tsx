@@ -20,7 +20,7 @@ export default function Header({
   onReconnect,
 }: HeaderProps) {
   return (
-    <header className="flex items-center justify-between w-full max-w-md mx-auto py-2 px-1 mb-2">
+    <header className="flex items-center justify-between w-full max-w-md mx-auto py-1 px-1 mb-1">
       {/* Brand & Room Info */}
       <div className="flex items-center gap-2">
         <div className="flex items-center gap-1.5 bg-white px-3 py-1.5 rounded-full border border-[#FDE68A] shadow-sm">

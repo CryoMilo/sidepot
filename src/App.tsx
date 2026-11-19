@@ -490,8 +490,8 @@ export default function App() {
       {/* Table Active State */}
       {tableState ? (
         <div className="w-full max-w-md mx-auto flex flex-col justify-between h-full gap-2 overflow-hidden">
-          {/* Top Bar Header */}
-          <div className="shrink-0">
+          {/* Top Bar Header (Navbar) */}
+          <div className="shrink-0 z-20">
             <Header
               roomId={tableState.roomId}
               bankerName={activeBanker ? activeBanker.name : 'Unknown'}
@@ -506,8 +506,8 @@ export default function App() {
             />
           </div>
 
-          {/* Golden Jar Display */}
-          <div className="flex-1 flex items-center justify-center min-h-0 py-0.5">
+          {/* Golden Jar: Stuck at top just below Navbar */}
+          <div className="shrink-0 z-10 w-full">
             <GoldenJar
               playerChips={myPlayer ? myPlayer.chips : tableState.defaultBuyIn}
               isDancing={isJarDancing}
@@ -515,8 +515,8 @@ export default function App() {
             />
           </div>
 
-          {/* Banker Controls */}
-          <div className="max-h-[28vh] overflow-y-auto no-scrollbar shrink-0">
+          {/* Banker Controls: Takes flexible middle space */}
+          <div className="flex-1 min-h-0 overflow-y-auto no-scrollbar">
             <BankerControls
               state={tableState}
               isCurrentPlayerBanker={isCurrentBanker}
