@@ -340,23 +340,6 @@ export default function App() {
     }
   };
 
-  const handleResetBet = () => {
-    if (!tableState || !myPlayerId) return;
-
-    if (isHost) {
-      setTableState(current => {
-        if (!current) return null;
-        const next = resetPlayerBet(current, myPlayerId);
-        broadcastState(hostConnectionsRef.current, next);
-        return next;
-      });
-    } else {
-      sendActionToHost(clientConnectionRef.current, 'RESET_BET', {
-        playerId: myPlayerId,
-      });
-    }
-  };
-
   const handleTransferAsDebt = (lenderId: string, borrowerId: string, amount: number) => {
     if (!tableState) return;
 
@@ -528,7 +511,6 @@ export default function App() {
               isBanker={isCurrentBanker}
               isCommitted={myPlayer ? myPlayer.isCommitted : false}
               onCommitBet={handleCommitBet}
-              onResetBet={handleResetBet}
               onOpenDebtModal={() => setShowDebtModal(true)}
             />
           </div>

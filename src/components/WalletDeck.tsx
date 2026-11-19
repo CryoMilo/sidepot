@@ -9,7 +9,6 @@ interface WalletDeckProps {
   isBanker: boolean;
   isCommitted?: boolean;
   onCommitBet: (amount: number) => void;
-  onResetBet: () => void;
   onOpenDebtModal: () => void;
 }
 
@@ -32,7 +31,6 @@ export default function WalletDeck({
   isBanker,
   isCommitted = false,
   onCommitBet,
-  onResetBet,
   onOpenDebtModal,
 }: WalletDeckProps) {
   const [stagedBet, setStagedBet] = useState<number>(0);
@@ -42,6 +40,7 @@ export default function WalletDeck({
   const availableChips = chips - stagedBet;
 
   const handleStageChip = (amount: number) => {
+    if (isCommitted) return;
     if (availableChips >= amount) {
       setStagedBet(prev => prev + amount);
       playSound('pop');
@@ -49,6 +48,7 @@ export default function WalletDeck({
   };
 
   const handleCommit = () => {
+    if (isCommitted) return;
     if (stagedBet > 0 && stagedBet <= chips) {
       onCommitBet(stagedBet);
       setStagedBet(0);
@@ -57,14 +57,13 @@ export default function WalletDeck({
   };
 
   const handleReset = () => {
+    if (isCommitted) return;
     setStagedBet(0);
-    if (currentBet > 0) {
-      onResetBet();
-    }
     playSound('pop');
   };
 
   const handleCustomAdd = () => {
+    if (isCommitted) return;
     if (customAmount > 0 && availableChips >= customAmount) {
       setStagedBet(prev => prev + customAmount);
       setShowCustom(false);
@@ -117,9 +116,9 @@ export default function WalletDeck({
         <div className="flex items-center gap-1.5">
           <button
             type="button"
-            disabled={stagedBet === 0 && currentBet === 0}
+            disabled={isCommitted || stagedBet === 0}
             onClick={handleReset}
-            className="bg-white hover:bg-[#FEF2F2] disabled:opacity-40 text-[#DC2626] border border-[#FECACA] font-black text-xs py-1.5 px-3 rounded-xl flex items-center gap-1 transition-all active:scale-95"
+            className="bg-white hover:bg-[#FEF2F2] disabled:opacity-35 text-[#DC2626] border border-[#FECACA] font-black text-xs py-1.5 px-3 rounded-xl flex items-center gap-1 transition-all active:scale-95"
           >
             <RotateCcw className="w-3 h-3" />
             <span>Reset</span>
@@ -207,7 +206,7 @@ export default function WalletDeck({
               stripeColor={denom.stripeColor}
               textColor={denom.textColor}
               accentRing={denom.accentRing}
-              disabled={availableChips < denom.val}
+              disabled={isCommitted || availableChips < denom.val}
               onBet={handleStageChip}
             />
           ))}
@@ -222,7 +221,7 @@ export default function WalletDeck({
             inlayBg="#09090B"
             textColor="#FDE047"
             accentRing="#F59E0B"
-            disabled={availableChips <= 0}
+            disabled={isCommitted || availableChips <= 0}
             onBet={handleStageChip}
           />
         </div>

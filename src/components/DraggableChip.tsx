@@ -70,9 +70,10 @@ export default function DraggableChip({
       <motion.div
         drag={!disabled ? 'y' : false}
         dragDirectionLock
-        dragConstraints={{ top: -220, bottom: 0 }}
-        dragElastic={0.4}
-        dragTransition={{ bounceStiffness: 450, bounceDamping: 25 }}
+        dragSnapToOrigin={true}
+        dragConstraints={{ top: 0, bottom: 0 }}
+        dragElastic={0.6}
+        dragTransition={{ bounceStiffness: 500, bounceDamping: 28 }}
         onDragStart={handleDragStart}
         onDragEnd={handleDragEnd}
         onClick={handleClick}
