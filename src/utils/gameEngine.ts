@@ -83,7 +83,7 @@ export function canBeBanker(player: Player): boolean {
 
 export function placeBet(state: TableState, playerId: string, amount: number): TableState {
   const player = state.players[playerId];
-  if (!player || amount <= 0 || player.chips < amount) {
+  if (!player || player.isBanker || amount <= 0 || player.chips < amount) {
     return state;
   }
 
@@ -103,7 +103,7 @@ export function placeBet(state: TableState, playerId: string, amount: number): T
 
 export function commitPlayerBet(state: TableState, playerId: string, amount: number): TableState {
   const player = state.players[playerId];
-  if (!player || amount <= 0 || player.chips < amount) {
+  if (!player || player.isBanker || amount <= 0 || player.chips < amount) {
     return state;
   }
 
@@ -352,17 +352,6 @@ export function advancePhase(state: TableState, nextPhase: TablePhase): TableSta
     for (const id of Object.keys(updatedPlayers)) {
       updatedPlayers[id] = {
         ...updatedPlayers[id],
-        isCommitted: false,
-      };
-    }
-    // Refund any remaining banker bet back to banker's chips for the new round
-    const banker = updatedPlayers[state.bankerId];
-    if (banker && banker.currentBet > 0) {
-      nextPot = Math.max(0, nextPot - banker.currentBet);
-      updatedPlayers[state.bankerId] = {
-        ...banker,
-        chips: banker.chips + banker.currentBet,
-        currentBet: 0,
         isCommitted: false,
       };
     }

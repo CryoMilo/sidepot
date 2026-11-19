@@ -163,13 +163,13 @@ describe('Game Engine & Ledger', () => {
     expect(verifyZeroSum(table).balanced).toBe(true);
   });
 
-  it('allows the Banker to bet as a player', () => {
+  it('prevents the Banker from betting as dealers cover the table', () => {
     let table = createInitialTable('7K92', 'Ko Aung', 50);
     table = placeBet(table, table.bankerId, 10);
 
-    expect(table.players[table.bankerId].chips).toBe(40);
-    expect(table.players[table.bankerId].currentBet).toBe(10);
-    expect(table.pot).toBe(10);
+    expect(table.players[table.bankerId].chips).toBe(50);
+    expect(table.players[table.bankerId].currentBet).toBe(0);
+    expect(table.pot).toBe(0);
   });
 
   it('only allows players with at least 20 tokens to be crowned as banker', () => {

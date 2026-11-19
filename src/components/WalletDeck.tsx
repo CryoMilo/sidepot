@@ -160,130 +160,152 @@ export default function WalletDeck({
         </button>
       </div>
 
-      {/* Staged Bet Bar: Completely hidden once committed to save space until next round */}
-      {!isCommitted && (
-        <div className="bg-[#FFFDF7] border border-[#FDE68A] rounded-2xl p-2 flex items-center justify-between gap-2">
-          <div className="flex flex-col">
-            <div className="text-[10px] font-extrabold text-[#92400E] uppercase tracking-wider">
-              Staged Bet
+      {/* Dealer vs Player View: Dealers cover bets and do not place bets */}
+      {isBanker ? (
+        <div className="bg-[#FFFDF7] border border-[#FDE68A] rounded-2xl p-3 flex items-center justify-between gap-2 shadow-xs">
+          <div className="flex items-center gap-2.5">
+            <div className="w-8 h-8 rounded-full bg-[#FEF3C7] border border-[#FCD34D] flex items-center justify-center shrink-0">
+              <Crown className="w-4 h-4 text-[#B45309]" />
             </div>
-            <div className="text-sm font-black text-[#78350F]">
-              {stagedBet}{' '}
-              <span className="text-[10px] font-bold text-[#B45309]">tokens</span>
+            <div>
+              <div className="text-xs font-black text-[#78350F]">Dealer Bankroll</div>
+              <div className="text-[10px] font-bold text-[#92400E]">
+                Covering all bets on the table. Manage resolutions above.
+              </div>
             </div>
           </div>
+          <span className="text-[10px] font-black text-[#B45309] bg-[#FEF3C7] px-2.5 py-1 rounded-xl border border-[#FCD34D] shrink-0">
+            Dealer
+          </span>
+        </div>
+      ) : (
+        <>
+          {/* Staged Bet Bar: Completely hidden once committed to save space until next round */}
+          {!isCommitted && (
+            <div className="bg-[#FFFDF7] border border-[#FDE68A] rounded-2xl p-2 flex items-center justify-between gap-2">
+              <div className="flex flex-col">
+                <div className="text-[10px] font-extrabold text-[#92400E] uppercase tracking-wider">
+                  Staged Bet
+                </div>
+                <div className="text-sm font-black text-[#78350F]">
+                  {stagedBet}{' '}
+                  <span className="text-[10px] font-bold text-[#B45309]">tokens</span>
+                </div>
+              </div>
 
-          {/* Reset and Commit Action Buttons with 3s (+10) / 5s (prank reveal) long-press */}
-          <div className="flex items-center gap-1.5">
-            <button
-              type="button"
-              disabled={stagedBet === 0}
-              onPointerDown={handleResetPointerDown}
-              onPointerUp={handleResetPointerUp}
-              onPointerLeave={handleResetPointerUp}
-              onContextMenu={e => e.preventDefault()}
-              className="bg-white hover:bg-[#FEF2F2] disabled:opacity-35 text-[#DC2626] border border-[#FECACA] font-black text-xs py-1.5 px-3 rounded-xl flex items-center gap-1 transition-all active:scale-95 select-none"
-            >
-              <RotateCcw className="w-3 h-3" />
-              <span>Reset</span>
-            </button>
+              {/* Reset and Commit Action Buttons with 3s (+10) / 5s (prank reveal) long-press */}
+              <div className="flex items-center gap-1.5">
+                <button
+                  type="button"
+                  disabled={stagedBet === 0}
+                  onPointerDown={handleResetPointerDown}
+                  onPointerUp={handleResetPointerUp}
+                  onPointerLeave={handleResetPointerUp}
+                  onContextMenu={e => e.preventDefault()}
+                  className="bg-white hover:bg-[#FEF2F2] disabled:opacity-35 text-[#DC2626] border border-[#FECACA] font-black text-xs py-1.5 px-3 rounded-xl flex items-center gap-1 transition-all active:scale-95 select-none"
+                >
+                  <RotateCcw className="w-3 h-3" />
+                  <span>Reset</span>
+                </button>
 
-            <button
-              type="button"
-              disabled={stagedBet <= 0}
-              onClick={handleCommit}
-              className="bg-[#F59E0B] hover:bg-[#D97706] disabled:opacity-40 text-white font-black text-xs py-1.5 px-3.5 rounded-xl flex items-center gap-1 shadow-sm transition-all active:scale-95"
-            >
-              <Check className="w-3.5 h-3.5" />
-              <span>Commit</span>
-            </button>
+                <button
+                  type="button"
+                  disabled={stagedBet <= 0}
+                  onClick={handleCommit}
+                  className="bg-[#F59E0B] hover:bg-[#D97706] disabled:opacity-40 text-white font-black text-xs py-1.5 px-3.5 rounded-xl flex items-center gap-1 shadow-sm transition-all active:scale-95"
+                >
+                  <Check className="w-3.5 h-3.5" />
+                  <span>Commit</span>
+                </button>
 
-            <button
-              type="button"
-              onClick={() => setShowCustom(!showCustom)}
-              className={`p-1.5 rounded-xl border transition-all ${
-                showCustom
-                  ? 'bg-[#F59E0B] text-white border-[#D97706]'
-                  : 'bg-white text-[#92400E] border-[#FCD34D] hover:bg-[#FEF3C7]'
-              }`}
-            >
-              <Sliders className="w-3.5 h-3.5" />
-            </button>
+                <button
+                  type="button"
+                  onClick={() => setShowCustom(!showCustom)}
+                  className={`p-1.5 rounded-xl border transition-all ${
+                    showCustom
+                      ? 'bg-[#F59E0B] text-white border-[#D97706]'
+                      : 'bg-white text-[#92400E] border-[#FCD34D] hover:bg-[#FEF3C7]'
+                  }`}
+                >
+                  <Sliders className="w-3.5 h-3.5" />
+                </button>
+              </div>
+            </div>
+          )}
+
+          {/* Custom Amount Bar */}
+          {!isCommitted && showCustom && (
+            <div className="p-2 bg-[#FFFDF8] rounded-xl border border-[#FCD34D] flex items-center justify-between gap-2">
+              <div className="flex items-center gap-1">
+                <button
+                  type="button"
+                  onClick={() => setCustomAmount(prev => Math.max(1, prev - 1))}
+                  className="w-6 h-6 rounded-lg bg-[#FEF3C7] text-[#92400E] font-black text-xs flex items-center justify-center border border-[#FDE68A]"
+                >
+                  -
+                </button>
+                <input
+                  type="number"
+                  min={1}
+                  max={availableChips}
+                  value={customAmount}
+                  onChange={e => setCustomAmount(parseInt(e.target.value, 10) || 1)}
+                  className="w-14 text-center text-xs font-black text-[#78350F] bg-white border border-[#FCD34D] rounded-lg py-1 focus:outline-none"
+                />
+                <button
+                  type="button"
+                  onClick={() => setCustomAmount(prev => Math.min(availableChips, prev + 1))}
+                  className="w-6 h-6 rounded-lg bg-[#FEF3C7] text-[#92400E] font-black text-xs flex items-center justify-center border border-[#FDE68A]"
+                >
+                  +
+                </button>
+              </div>
+
+              <button
+                type="button"
+                onClick={handleCustomAdd}
+                disabled={availableChips < customAmount || customAmount <= 0}
+                className="bg-[#F59E0B] hover:bg-[#D97706] disabled:opacity-40 text-white font-black text-xs py-1 px-3 rounded-lg flex items-center gap-1 shadow-sm"
+              >
+                <span>+ Stage {customAmount} Tokens</span>
+              </button>
+            </div>
+          )}
+
+          {/* Horizontal Scrollable Draggable Casino Chip Rack with Dedicated Tray Styling */}
+          <div className="relative w-full bg-[#FFFDF5] rounded-2xl p-2 sm:p-2.5 border border-[#FDE68A]/80 shadow-inner">
+            <div className="flex gap-4 sm:gap-5 overflow-x-auto no-scrollbar py-1.5 px-2 touch-pan-x items-center">
+              {CASINO_DENOMINATIONS.map(denom => (
+                <DraggableChip
+                  key={denom.val}
+                  amount={denom.val}
+                  label={denom.label}
+                  clayColor={denom.clayColor}
+                  stripeColor={denom.stripeColor}
+                  textColor={denom.textColor}
+                  accentRing={denom.accentRing}
+                  disabled={isCommitted || availableChips < denom.val}
+                  onBet={handleStageChip}
+                />
+              ))}
+
+              {/* ALL-IN Casino Chip (Onyx Black & Gold) */}
+              <DraggableChip
+                amount={availableChips}
+                label="ALL IN"
+                subLabel="MAX"
+                clayColor="#18181B"
+                stripeColor="#F59E0B"
+                inlayBg="#09090B"
+                textColor="#FDE047"
+                accentRing="#F59E0B"
+                disabled={isCommitted || availableChips <= 0}
+                onBet={handleStageChip}
+              />
+            </div>
           </div>
-        </div>
+        </>
       )}
-
-      {/* Custom Amount Bar */}
-      {!isCommitted && showCustom && (
-        <div className="p-2 bg-[#FFFDF8] rounded-xl border border-[#FCD34D] flex items-center justify-between gap-2">
-          <div className="flex items-center gap-1">
-            <button
-              type="button"
-              onClick={() => setCustomAmount(prev => Math.max(1, prev - 1))}
-              className="w-6 h-6 rounded-lg bg-[#FEF3C7] text-[#92400E] font-black text-xs flex items-center justify-center border border-[#FDE68A]"
-            >
-              -
-            </button>
-            <input
-              type="number"
-              min={1}
-              max={availableChips}
-              value={customAmount}
-              onChange={e => setCustomAmount(parseInt(e.target.value, 10) || 1)}
-              className="w-14 text-center text-xs font-black text-[#78350F] bg-white border border-[#FCD34D] rounded-lg py-1 focus:outline-none"
-            />
-            <button
-              type="button"
-              onClick={() => setCustomAmount(prev => Math.min(availableChips, prev + 1))}
-              className="w-6 h-6 rounded-lg bg-[#FEF3C7] text-[#92400E] font-black text-xs flex items-center justify-center border border-[#FDE68A]"
-            >
-              +
-            </button>
-          </div>
-
-          <button
-            type="button"
-            onClick={handleCustomAdd}
-            disabled={availableChips < customAmount || customAmount <= 0}
-            className="bg-[#F59E0B] hover:bg-[#D97706] disabled:opacity-40 text-white font-black text-xs py-1 px-3 rounded-lg flex items-center gap-1 shadow-sm"
-          >
-            <span>+ Stage {customAmount} Tokens</span>
-          </button>
-        </div>
-      )}
-
-      {/* Horizontal Scrollable Draggable Casino Chip Rack with Dedicated Tray Styling */}
-      <div className="relative w-full bg-[#FFFDF5] rounded-2xl p-2 sm:p-2.5 border border-[#FDE68A]/80 shadow-inner">
-        <div className="flex gap-4 sm:gap-5 overflow-x-auto no-scrollbar py-1.5 px-2 touch-pan-x items-center">
-          {CASINO_DENOMINATIONS.map(denom => (
-            <DraggableChip
-              key={denom.val}
-              amount={denom.val}
-              label={denom.label}
-              clayColor={denom.clayColor}
-              stripeColor={denom.stripeColor}
-              textColor={denom.textColor}
-              accentRing={denom.accentRing}
-              disabled={isCommitted || availableChips < denom.val}
-              onBet={handleStageChip}
-            />
-          ))}
-
-          {/* ALL-IN Casino Chip (Onyx Black & Gold) */}
-          <DraggableChip
-            amount={availableChips}
-            label="ALL IN"
-            subLabel="MAX"
-            clayColor="#18181B"
-            stripeColor="#F59E0B"
-            inlayBg="#09090B"
-            textColor="#FDE047"
-            accentRing="#F59E0B"
-            disabled={isCommitted || availableChips <= 0}
-            onBet={handleStageChip}
-          />
-        </div>
-      </div>
     </div>
   );
 }

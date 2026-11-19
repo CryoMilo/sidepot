@@ -495,7 +495,6 @@ export default function App() {
             <Header
               roomId={tableState.roomId}
               bankerName={activeBanker ? activeBanker.name : 'Unknown'}
-              dealerBet={activeBanker ? activeBanker.currentBet : 0}
               isConnected={isConnected}
               onOpenQr={() => {
                 setRoomModalMode('QR_SHARE');

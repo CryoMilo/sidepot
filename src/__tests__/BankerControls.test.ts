@@ -20,13 +20,14 @@ describe('BankerControls and Settlement Logic', () => {
     expect(table.pot).toBe(1000);
   });
 
-  it('allows dealer to place and commit bets visible on the table', () => {
+  it('prevents dealer from placing bets as dealers cover the table', () => {
     let table = createInitialTable('7K92', 'Ko Aung', 5000);
     expect(table.players[table.bankerId].currentBet).toBe(0);
 
+    // Dealer cannot place a bet
     table = placeBet(table, table.bankerId, 25);
-    expect(table.players[table.bankerId].currentBet).toBe(25);
-    expect(table.players[table.bankerId].chips).toBe(4975);
-    expect(table.pot).toBe(25);
+    expect(table.players[table.bankerId].currentBet).toBe(0);
+    expect(table.players[table.bankerId].chips).toBe(5000);
+    expect(table.pot).toBe(0);
   });
 });

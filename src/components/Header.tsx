@@ -3,7 +3,6 @@ import { Crown, QrCode, LogOut, FileText, Wifi, WifiOff } from 'lucide-react';
 interface HeaderProps {
   roomId: string;
   bankerName: string;
-  dealerBet?: number;
   isConnected: boolean;
   onOpenQr: () => void;
   onOpenSettlement: () => void;
@@ -14,7 +13,6 @@ interface HeaderProps {
 export default function Header({
   roomId,
   bankerName,
-  dealerBet = 0,
   isConnected,
   onOpenQr,
   onOpenSettlement,
@@ -70,19 +68,10 @@ export default function Header({
 
       {/* Right Controls */}
       <div className="flex items-center gap-1.5">
-        {/* Dealer Identity & Current Bet (Visible to all players on mobile & desktop) */}
-        <div className="flex items-center gap-1 text-[11px] font-bold text-[#92400E] bg-[#FFFBEB] px-2 py-1 rounded-full border border-[#FDE68A] shadow-xs">
+        {/* Dealer Identity (Visible to all players on mobile & desktop) */}
+        <div className="flex items-center gap-1.5 text-[11px] font-bold text-[#92400E] bg-[#FFFBEB] px-2.5 py-1 rounded-full border border-[#FDE68A] shadow-xs">
           <Crown className="w-3.5 h-3.5 text-[#D97706] shrink-0" />
-          <span className="max-w-[60px] xs:max-w-[80px] truncate font-extrabold">{bankerName}</span>
-          {dealerBet > 0 ? (
-            <span className="text-[9px] font-black bg-[#DCFCE7] text-[#16A34A] px-1.5 py-0.2 rounded border border-[#86EFAC] shrink-0" title={`Dealer bet: ${dealerBet} tokens`}>
-              {dealerBet}
-            </span>
-          ) : (
-            <span className="text-[9px] font-bold text-[#B45309] bg-[#FEF3C7] px-1 rounded shrink-0">
-              0
-            </span>
-          )}
+          <span className="max-w-[70px] xs:max-w-[100px] truncate font-extrabold">{bankerName}</span>
         </div>
 
         <button
