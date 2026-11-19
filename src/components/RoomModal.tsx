@@ -22,7 +22,7 @@ export default function RoomModal({
   const [activeTab, setActiveTab] = useState<'CREATE' | 'JOIN' | 'QR_SHARE'>(initialMode);
   const [name, setName] = useState('');
   const [roomCode, setRoomCode] = useState(currentRoomId || '');
-  const [buyIn, setBuyIn] = useState(5000);
+  const [buyIn, setBuyIn] = useState(100);
   const [copied, setCopied] = useState(false);
 
   if (!isOpen) return null;
@@ -175,10 +175,10 @@ export default function RoomModal({
             {activeTab === 'CREATE' && (
               <div>
                 <label className="block text-xs font-black text-[#78350F] mb-1">
-                  Starting Chip Buy-In
+                  Starting Token Buy-In
                 </label>
                 <div className="grid grid-cols-3 gap-2">
-                  {[2000, 5000, 10000].map(amt => (
+                  {[50, 100, 200].map(amt => (
                     <button
                       key={amt}
                       type="button"
@@ -189,7 +189,7 @@ export default function RoomModal({
                           : 'bg-white text-[#92400E] border-[#FCD34D] hover:bg-[#FEF3C7]'
                       }`}
                     >
-                      ${(amt / 1000).toFixed(0)}k
+                      {amt} Tokens
                     </button>
                   ))}
                 </div>

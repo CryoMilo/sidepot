@@ -72,9 +72,15 @@ export function addPlayer(state: TableState, playerId: string, name: string): Ta
   };
 }
 
+export const MIN_BANKER_TOKENS = 20;
+
+export function canBeBanker(player: Player): boolean {
+  return player.chips >= MIN_BANKER_TOKENS;
+}
+
 export function placeBet(state: TableState, playerId: string, amount: number): TableState {
   const player = state.players[playerId];
-  if (!player || player.isBanker || amount <= 0 || player.chips < amount) {
+  if (!player || amount <= 0 || player.chips < amount) {
     return state;
   }
 
@@ -151,7 +157,8 @@ export function resolvePlayerBet(state: TableState, playerId: string, outcome: B
 }
 
 export function rotateBanker(state: TableState, newBankerId: string): TableState {
-  if (!state.players[newBankerId]) return state;
+  const targetPlayer = state.players[newBankerId];
+  if (!targetPlayer || targetPlayer.chips < MIN_BANKER_TOKENS) return state;
 
   let potDelta = 0;
 
@@ -185,13 +192,28 @@ export function rotateBanker(state: TableState, newBankerId: string): TableState
 
 export function advancePhase(state: TableState, nextPhase: TablePhase): TableState {
   let nextRound = state.roundNumber;
+  let nextPot = state.pot;
+  const updatedPlayers: Record<string, Player> = { ...state.players };
+
   if (nextPhase === 'BETTING') {
     nextRound += 1;
+    // Refund any remaining banker bet back to banker's chips for the new round
+    const banker = updatedPlayers[state.bankerId];
+    if (banker && banker.currentBet > 0) {
+      nextPot = Math.max(0, nextPot - banker.currentBet);
+      updatedPlayers[state.bankerId] = {
+        ...banker,
+        chips: banker.chips + banker.currentBet,
+        currentBet: 0,
+      };
+    }
   }
 
   return {
     ...state,
     roundNumber: nextRound,
+    pot: nextPot,
+    players: updatedPlayers,
     phase: nextPhase,
   };
 }

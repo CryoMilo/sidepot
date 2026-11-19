@@ -397,51 +397,59 @@ export default function App() {
   const isCurrentBanker = myPlayer ? myPlayer.isBanker : false;
 
   return (
-    <main className="min-h-screen bg-gradient-to-b from-[#FFFDF9] via-[#FFF8EA] to-[#FFF2D5] px-4 py-3 flex flex-col justify-between">
+    <main className="fixed inset-0 h-[100dvh] max-h-[100dvh] w-screen overflow-hidden select-none touch-none bg-gradient-to-b from-[#FFFDF9] via-[#FFF8EA] to-[#FFF2D5] p-2.5 sm:p-4 flex flex-col justify-between">
       {/* Table Active State */}
       {tableState ? (
-        <div className="w-full max-w-md mx-auto flex flex-col gap-3">
+        <div className="w-full max-w-md mx-auto flex flex-col justify-between h-full gap-2 overflow-hidden">
           {/* Top Bar Header */}
-          <Header
-            roomId={tableState.roomId}
-            bankerName={activeBanker ? activeBanker.name : 'Unknown'}
-            isConnected={isConnected}
-            onOpenQr={() => {
-              setRoomModalMode('QR_SHARE');
-              setShowRoomModal(true);
-            }}
-            onOpenSettlement={() => setShowSettlementModal(true)}
-            onLeaveRoom={handleLeaveRoom}
-            onReconnect={handleReconnect}
-          />
+          <div className="shrink-0">
+            <Header
+              roomId={tableState.roomId}
+              bankerName={activeBanker ? activeBanker.name : 'Unknown'}
+              isConnected={isConnected}
+              onOpenQr={() => {
+                setRoomModalMode('QR_SHARE');
+                setShowRoomModal(true);
+              }}
+              onOpenSettlement={() => setShowSettlementModal(true)}
+              onLeaveRoom={handleLeaveRoom}
+              onReconnect={handleReconnect}
+            />
+          </div>
 
           {/* Golden Jar Display */}
-          <GoldenJar
-            playerChips={myPlayer ? myPlayer.chips : tableState.defaultBuyIn}
-            potTotal={tableState.pot}
-            isDancing={isJarDancing}
-            onClick={triggerJarDance}
-          />
+          <div className="flex-1 flex items-center justify-center min-h-0 py-0.5">
+            <GoldenJar
+              playerChips={myPlayer ? myPlayer.chips : tableState.defaultBuyIn}
+              potTotal={tableState.pot}
+              isDancing={isJarDancing}
+              onClick={triggerJarDance}
+            />
+          </div>
 
           {/* Banker Controls */}
-          <BankerControls
-            state={tableState}
-            isCurrentPlayerBanker={isCurrentBanker}
-            isHost={isHost}
-            onResolveBet={handleResolveBet}
-            onRotateBanker={handleRotateBanker}
-            onAdvancePhase={handleAdvancePhase}
-            onTopUpBanker={handleTopUp}
-          />
+          <div className="max-h-[30vh] overflow-y-auto no-scrollbar shrink-0">
+            <BankerControls
+              state={tableState}
+              isCurrentPlayerBanker={isCurrentBanker}
+              isHost={isHost}
+              onResolveBet={handleResolveBet}
+              onRotateBanker={handleRotateBanker}
+              onAdvancePhase={handleAdvancePhase}
+              onTopUpBanker={handleTopUp}
+            />
+          </div>
 
           {/* Player Wallet & Draggable Chips Rack */}
-          <WalletDeck
-            chips={myPlayer ? myPlayer.chips : 0}
-            currentBet={myPlayer ? myPlayer.currentBet : 0}
-            isBanker={isCurrentBanker}
-            onBet={handlePlaceBet}
-            onTopUp={handleTopUp}
-          />
+          <div className="shrink-0">
+            <WalletDeck
+              chips={myPlayer ? myPlayer.chips : 0}
+              currentBet={myPlayer ? myPlayer.currentBet : 0}
+              isBanker={isCurrentBanker}
+              onBet={handlePlaceBet}
+              onTopUp={handleTopUp}
+            />
+          </div>
         </div>
       ) : (
         /* Empty Welcome Stage */

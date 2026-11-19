@@ -125,8 +125,35 @@ describe('Game Engine & Ledger', () => {
     expect(verifyZeroSum(table).balanced).toBe(true);
   });
 
+  it('allows the Banker to bet as a player', () => {
+    let table = createInitialTable('7K92', 'Ko Aung', 50);
+    table = placeBet(table, table.bankerId, 10);
+
+    expect(table.players[table.bankerId].chips).toBe(40);
+    expect(table.players[table.bankerId].currentBet).toBe(10);
+    expect(table.pot).toBe(10);
+  });
+
+  it('only allows players with at least 20 tokens to be crowned as banker', () => {
+    let table = createInitialTable('7K92', 'Ko Aung', 50);
+    table = addPlayer(table, 'p2', 'Min Min');
+    table = addPlayer(table, 'p3', 'Thida');
+
+    // Reduce Thida's chips to 15
+    table.players['p3'].chips = 15;
+
+    // Try to rotate banker to Thida (< 20 tokens) - should fail / remain unchanged
+    const tableFailed = rotateBanker(table, 'p3');
+    expect(tableFailed.bankerId).toBe(table.hostId);
+
+    // Rotate to Min Min (50 tokens >= 20) - should succeed
+    const tableSuccess = rotateBanker(table, 'p2');
+    expect(tableSuccess.bankerId).toBe('p2');
+    expect(tableSuccess.players['p2'].isBanker).toBe(true);
+  });
+
   it('rotates the banker role', () => {
-    let table = createInitialTable('7K92', 'Ko Aung', 5000);
+    let table = createInitialTable('7K92', 'Ko Aung', 50);
     table = addPlayer(table, 'p2', 'Min Min');
     table = rotateBanker(table, 'p2');
 

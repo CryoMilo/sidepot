@@ -1,4 +1,5 @@
 import { TableState, BetOutcome } from '../types';
+import { MIN_BANKER_TOKENS } from '../utils/gameEngine';
 import { Crown, Zap, Flame, ShieldCheck, CheckCheck, AlertCircle, PlusCircle } from 'lucide-react';
 import { playSound } from '../utils/audio';
 
@@ -68,7 +69,7 @@ export default function BankerControls({
                 isBankerDepleted ? 'text-[#DC2626]' : 'text-[#92400E]'
               }`}
             >
-              Stack: ${activeBanker ? activeBanker.chips.toLocaleString() : 0}
+              Stack: {activeBanker ? activeBanker.chips.toLocaleString() : 0} tokens
             </div>
           </div>
         </div>
@@ -80,11 +81,18 @@ export default function BankerControls({
             onChange={e => onRotateBanker(e.target.value)}
             className="text-xs font-extrabold bg-white border border-[#FCD34D] text-[#78350F] py-1 px-2.5 rounded-xl shadow-sm focus:outline-none focus:ring-2 focus:ring-[#F59E0B]"
           >
-            {Object.values(state.players).map(p => (
-              <option key={p.id} value={p.id}>
-                Crown {p.name}
-              </option>
-            ))}
+            {Object.values(state.players).map(p => {
+              const eligible = p.chips >= MIN_BANKER_TOKENS;
+              return (
+                <option
+                  key={p.id}
+                  value={p.id}
+                  disabled={!eligible && p.id !== state.bankerId}
+                >
+                  Crown {p.name} {eligible ? `(${p.chips} tokens)` : `(Needs 20+ tokens - has ${p.chips})`}
+                </option>
+              );
+            })}
           </select>
         ) : (
           <span className="text-[10px] font-bold text-[#92400E] bg-[#FEF3C7] px-2.5 py-1 rounded-lg border border-[#FCD34D]">
@@ -102,11 +110,11 @@ export default function BankerControls({
           </div>
           {isCurrentPlayerBanker && (
             <button
-              onClick={() => onTopUpBanker(5000)}
+              onClick={() => onTopUpBanker(50)}
               className="text-[11px] font-black bg-[#DC2626] text-white px-2.5 py-1 rounded-xl flex items-center gap-1 hover:bg-[#B91C1C] transition-colors"
             >
               <PlusCircle className="w-3.5 h-3.5" />
-              <span>+$5k Rebuy</span>
+              <span>+50 Tokens</span>
             </button>
           )}
         </div>
@@ -165,7 +173,7 @@ export default function BankerControls({
                   <span className="text-sm font-black text-[#422006]">{player.name}</span>
                 </div>
                 <div className="text-xs font-extrabold text-[#D97706] bg-[#FEF3C7] px-2.5 py-0.5 rounded-full border border-[#FDE68A]">
-                  Bet: ${player.currentBet.toLocaleString()}
+                  Bet: {player.currentBet.toLocaleString()} tokens
                 </div>
               </div>
 

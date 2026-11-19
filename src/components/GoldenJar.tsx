@@ -3,8 +3,8 @@ import { motion } from 'framer-motion';
 export type JarMood = 'worried' | 'confident' | 'ecstatic';
 
 export function getJarMood(chips: number): JarMood {
-  if (chips < 1500) return 'worried';
-  if (chips <= 6000) return 'confident';
+  if (chips < 20) return 'worried';
+  if (chips <= 80) return 'confident';
   return 'ecstatic';
 }
 
