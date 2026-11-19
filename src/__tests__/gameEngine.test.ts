@@ -290,4 +290,26 @@ describe('Game Engine & Ledger', () => {
     table = adjustPlayerChips(table, table.hostId, -10);
     expect(table.players[table.hostId].chips).toBe(100);
   });
+
+  it('manages isCommitted lifecycle across commit, reset, resolve, and phase advance', () => {
+    let table = createInitialTable('7K92', 'Ko Aung', 100);
+    table = addPlayer(table, 'p2', 'Min Min');
+
+    // Min Min commits bet
+    table = commitPlayerBet(table, 'p2', 25);
+    expect(table.players['p2'].isCommitted).toBe(true);
+    expect(table.players['p2'].currentBet).toBe(25);
+
+    // Resolving bet frees player for next round
+    table = resolvePlayerBet(table, 'p2', 'WIN_1X');
+    expect(table.players['p2'].isCommitted).toBe(false);
+    expect(table.players['p2'].currentBet).toBe(0);
+
+    // Commit and reset
+    table = commitPlayerBet(table, 'p2', 15);
+    expect(table.players['p2'].isCommitted).toBe(true);
+    table = resetPlayerBet(table, 'p2');
+    expect(table.players['p2'].isCommitted).toBe(false);
+    expect(table.players['p2'].currentBet).toBe(0);
+  });
 });

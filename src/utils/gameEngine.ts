@@ -296,6 +296,7 @@ export function resolvePlayerBet(state: TableState, playerId: string, outcome: B
         ...player,
         chips: player.chips + playerChipDelta,
         currentBet: 0,
+        isCommitted: false,
       },
       [state.bankerId]: {
         ...banker,
@@ -322,6 +323,7 @@ export function rotateBanker(state: TableState, newBankerId: string): TableState
         isBanker: true,
         chips: p.chips + refundedBet,
         currentBet: 0,
+        isCommitted: false,
       };
     } else {
       updatedPlayers[id] = {

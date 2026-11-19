@@ -155,13 +155,8 @@ export default function WalletDeck({
         </button>
       </div>
 
-      {/* Staged Bet Bar: Hidden once committed to save space until next round */}
-      {isCommitted ? (
-        <div className="bg-[#DCFCE7] text-[#16A34A] border border-[#86EFAC] rounded-xl py-1 px-3 text-center text-xs font-black flex items-center justify-center gap-1.5 shadow-sm">
-          <Check className="w-3.5 h-3.5 text-[#16A34A]" />
-          <span>Bet Locked ({currentBet} tokens) - Awaiting Dealer</span>
-        </div>
-      ) : (
+      {/* Staged Bet Bar: Completely hidden once committed to save space until next round */}
+      {!isCommitted && (
         <div className="bg-[#FFFDF7] border border-[#FDE68A] rounded-2xl p-2 flex items-center justify-between gap-2">
           <div className="flex flex-col">
             <div className="text-[10px] font-extrabold text-[#92400E] uppercase tracking-wider">
@@ -214,7 +209,7 @@ export default function WalletDeck({
       )}
 
       {/* Custom Amount Bar */}
-      {showCustom && (
+      {!isCommitted && showCustom && (
         <div className="p-2 bg-[#FFFDF8] rounded-xl border border-[#FCD34D] flex items-center justify-between gap-2">
           <div className="flex items-center gap-1">
             <button
