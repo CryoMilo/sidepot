@@ -19,4 +19,14 @@ describe('BankerControls and Settlement Logic', () => {
     // Active pot has $1,000
     expect(table.pot).toBe(1000);
   });
+
+  it('allows dealer to place and commit bets visible on the table', () => {
+    let table = createInitialTable('7K92', 'Ko Aung', 5000);
+    expect(table.players[table.bankerId].currentBet).toBe(0);
+
+    table = placeBet(table, table.bankerId, 25);
+    expect(table.players[table.bankerId].currentBet).toBe(25);
+    expect(table.players[table.bankerId].chips).toBe(4975);
+    expect(table.pot).toBe(25);
+  });
 });

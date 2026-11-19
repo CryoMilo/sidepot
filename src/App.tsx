@@ -486,7 +486,7 @@ export default function App() {
   const isCurrentBanker = myPlayer ? myPlayer.isBanker : false;
 
   return (
-    <main className="fixed inset-0 h-[100dvh] max-h-[100dvh] w-screen overflow-hidden select-none touch-none bg-gradient-to-b from-[#FFFDF9] via-[#FFF8EA] to-[#FFF2D5] p-2.5 sm:p-4 flex flex-col justify-between">
+    <main className="fixed inset-0 h-[100dvh] max-h-[100dvh] w-screen overflow-hidden select-none touch-none bg-gradient-to-b from-[#FFFDF9] via-[#FFF8EA] to-[#FFF2D5] safe-area-container sm:p-4 flex flex-col justify-between">
       {/* Table Active State */}
       {tableState ? (
         <div className="w-full max-w-md mx-auto flex flex-col justify-between h-full gap-2 overflow-hidden">
@@ -495,6 +495,7 @@ export default function App() {
             <Header
               roomId={tableState.roomId}
               bankerName={activeBanker ? activeBanker.name : 'Unknown'}
+              dealerBet={activeBanker ? activeBanker.currentBet : 0}
               isConnected={isConnected}
               onOpenQr={() => {
                 setRoomModalMode('QR_SHARE');

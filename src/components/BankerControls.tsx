@@ -55,15 +55,24 @@ export default function BankerControls({
 
   return (
     <div className="bg-[#FFF9EB] border-2 border-[#FDE68A] rounded-[24px] p-3 w-full max-w-md mx-auto shadow-sm flex flex-col gap-2">
-      {/* Banker Status Header (Simplified, No Duplicate Stack Display) */}
+      {/* Banker Status Header (Simplified, Shows Dealer name and active bet) */}
       <div className="flex items-center justify-between pb-2 border-b border-[#FDE68A]/60">
         <div className="flex items-center gap-2">
-          <div className="w-7 h-7 rounded-full bg-[#FEF3C7] border border-[#FCD34D] flex items-center justify-center">
+          <div className="w-7 h-7 rounded-full bg-[#FEF3C7] border border-[#FCD34D] flex items-center justify-center shrink-0">
             <Crown className="w-4 h-4 text-[#B45309]" />
           </div>
           <div>
-            <div className="text-xs font-black text-[#78350F]">
-              Dealer: {activeBanker ? activeBanker.name : 'Unknown'}
+            <div className="text-xs font-black text-[#78350F] flex items-center gap-1.5 flex-wrap">
+              <span>Dealer: {activeBanker ? activeBanker.name : 'Unknown'}</span>
+              {activeBanker && activeBanker.currentBet > 0 ? (
+                <span className="text-[10px] font-black bg-[#DCFCE7] text-[#16A34A] border border-[#86EFAC] px-2 py-0.5 rounded-lg shadow-xs">
+                  Bet: {activeBanker.currentBet} tokens
+                </span>
+              ) : (
+                <span className="text-[9px] font-bold text-[#B45309] bg-[#FEF3C7] px-1.5 py-0.5 rounded border border-[#FDE68A]">
+                  No bet yet
+                </span>
+              )}
             </div>
           </div>
         </div>
@@ -126,6 +135,40 @@ export default function BankerControls({
             </div>
           )}
         </div>
+
+        {/* Dealer's Bet Card (Always visible to all players when dealer has placed a bet) */}
+        {activeBanker && activeBanker.currentBet > 0 && (
+          <div className="bg-[#FFFBEB] rounded-xl p-2 border-2 border-[#FCD34D] shadow-sm flex items-center justify-between">
+            <div className="flex items-center gap-1.5">
+              <div className="w-5 h-5 rounded-full bg-[#FEF3C7] border border-[#F59E0B] flex items-center justify-center shrink-0">
+                <Crown className="w-3 h-3 text-[#D97706]" />
+              </div>
+              <div className="flex items-center gap-1">
+                <span className="text-xs font-black text-[#78350F]">{activeBanker.name}</span>
+                <span className="text-[9px] font-black bg-[#F59E0B] text-white px-1.5 py-0.2 rounded-full uppercase">
+                  Dealer
+                </span>
+              </div>
+            </div>
+
+            <div className="flex items-center gap-1.5">
+              {activeBanker.isCommitted ? (
+                <span className="text-[9px] font-black text-[#16A34A] bg-[#DCFCE7] px-1.5 py-0.5 rounded flex items-center gap-0.5 border border-[#86EFAC]">
+                  <Check className="w-2.5 h-2.5" />
+                  <span>Ready</span>
+                </span>
+              ) : (
+                <span className="text-[9px] font-bold text-[#D97706] bg-[#FEF3C7] px-1.5 py-0.5 rounded flex items-center gap-0.5 border border-[#FDE68A]">
+                  <Clock className="w-2.5 h-2.5" />
+                  <span>Staging</span>
+                </span>
+              )}
+              <div className="text-xs font-black text-[#92400E] bg-white px-2 py-0.5 rounded-lg border border-[#FCD34D] shadow-xs">
+                {activeBanker.currentBet} <span className="text-[9px] font-bold">tokens</span>
+              </div>
+            </div>
+          </div>
+        )}
 
         {activeBetPlayers.length === 0 ? (
           <div className="bg-white/80 rounded-xl p-2.5 text-center border border-[#FDE68A]">
