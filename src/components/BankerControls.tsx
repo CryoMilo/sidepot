@@ -1,6 +1,7 @@
+import { useState } from 'react';
 import { TableState, BetOutcome } from '../types';
 import { MIN_BANKER_TOKENS } from '../utils/gameEngine';
-import { Crown, Zap, Flame, ShieldCheck, CheckCheck, AlertCircle, Check, Clock } from 'lucide-react';
+import { Crown, Zap, Flame, ShieldCheck, CheckCheck, AlertCircle, Check, Clock, ChevronDown, ChevronUp } from 'lucide-react';
 import { playSound } from '../utils/audio';
 
 interface BankerControlsProps {
@@ -20,6 +21,7 @@ export default function BankerControls({
   onRotateBanker,
   onAdvancePhase,
 }: BankerControlsProps) {
+  const [expandedPlayerId, setExpandedPlayerId] = useState<string | null>(null);
   const activeBanker = state.players[state.bankerId];
   const activeBetPlayers = Object.values(state.players).filter(
     p => !p.isBanker && p.currentBet > 0
@@ -29,11 +31,12 @@ export default function BankerControls({
   const isBankerDepleted = activeBanker ? activeBanker.chips <= 0 : false;
 
   const handleResolve = (playerId: string, outcome: BetOutcome) => {
-    if (outcome === 'COLLECT') playSound('pop');
+    if (outcome === 'COLLECT' || outcome === 'COLLECT_2X' || outcome === 'COLLECT_3X') playSound('pop');
     else if (outcome === 'WIN_1X' || outcome === 'SHAN_2X' || outcome === 'MEE_3X') playSound('win');
     else playSound('clink');
 
     onResolveBet(playerId, outcome);
+    setExpandedPlayerId(null);
   };
 
   const handleCollectAll = () => {
@@ -140,111 +143,132 @@ export default function BankerControls({
           </div>
         ) : (
           <div className="space-y-1.5">
-            {activeBetPlayers.map(player => (
-              <div
-                key={player.id}
-                className="bg-white rounded-xl p-2 border border-[#FDE68A] shadow-sm flex flex-col gap-1.5"
-              >
-                {/* Player Header: Name, Bet & Commit Status */}
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-1.5">
-                    <div
-                      className="w-3 h-3 rounded-full"
-                      style={{ backgroundColor: player.avatarColor }}
-                    />
-                    <span className="text-xs font-black text-[#422006]">{player.name}</span>
+            {activeBetPlayers.map(player => {
+              const isExpanded = expandedPlayerId === player.id;
+              return (
+                <div
+                  key={player.id}
+                  className="bg-white rounded-xl p-2 border border-[#FDE68A] shadow-sm flex flex-col gap-1.5"
+                >
+                  {/* Clickable Header Row: Click to Expand / Collapse */}
+                  <div
+                    onClick={() =>
+                      isCurrentPlayerBanker &&
+                      setExpandedPlayerId(isExpanded ? null : player.id)
+                    }
+                    className={`flex items-center justify-between ${
+                      isCurrentPlayerBanker
+                        ? 'cursor-pointer hover:bg-[#FFFDF9] py-0.5'
+                        : ''
+                    }`}
+                  >
+                    <div className="flex items-center gap-1.5">
+                      <div
+                        className="w-3 h-3 rounded-full"
+                        style={{ backgroundColor: player.avatarColor }}
+                      />
+                      <span className="text-xs font-black text-[#422006]">{player.name}</span>
+                    </div>
+
+                    <div className="flex items-center gap-1.5">
+                      {player.isCommitted ? (
+                        <span className="text-[9px] font-black text-[#16A34A] bg-[#DCFCE7] px-1.5 py-0.5 rounded flex items-center gap-0.5">
+                          <Check className="w-2.5 h-2.5" />
+                          <span>Ready</span>
+                        </span>
+                      ) : (
+                        <span className="text-[9px] font-bold text-[#D97706] bg-[#FEF3C7] px-1.5 py-0.5 rounded flex items-center gap-0.5">
+                          <Clock className="w-2.5 h-2.5" />
+                          <span>Staging</span>
+                        </span>
+                      )}
+                      <span className="text-xs font-black text-[#D97706]">
+                        {player.currentBet} tkn
+                      </span>
+
+                      {/* Expand / Collapse Action Badge for Dealer */}
+                      {isCurrentPlayerBanker && (
+                        <span className="text-[10px] font-black text-[#B45309] bg-[#FEF3C7] px-2 py-0.5 rounded-lg border border-[#FCD34D] flex items-center gap-0.5 ml-1">
+                          <span>{isExpanded ? 'Close' : 'Resolve'}</span>
+                          {isExpanded ? (
+                            <ChevronUp className="w-3 h-3" />
+                          ) : (
+                            <ChevronDown className="w-3 h-3" />
+                          )}
+                        </span>
+                      )}
+                    </div>
                   </div>
 
-                  <div className="flex items-center gap-1.5">
-                    {player.isCommitted ? (
-                      <span className="text-[9px] font-black text-[#16A34A] bg-[#DCFCE7] px-1.5 py-0.5 rounded flex items-center gap-0.5">
-                        <Check className="w-2.5 h-2.5" />
-                        <span>Ready</span>
-                      </span>
-                    ) : (
-                      <span className="text-[9px] font-bold text-[#D97706] bg-[#FEF3C7] px-1.5 py-0.5 rounded flex items-center gap-0.5">
-                        <Clock className="w-2.5 h-2.5" />
-                        <span>Staging</span>
-                      </span>
-                    )}
-                    <span className="text-xs font-black text-[#D97706]">
-                      {player.currentBet} tokens
-                    </span>
-                  </div>
+                  {/* Resolution Buttons Revealed on Click */}
+                  {isCurrentPlayerBanker && isExpanded && (
+                    <div className="flex flex-col gap-1 pt-1 border-t border-[#FDE68A]/60 animate-fadeIn">
+                      {/* Row 1: Player Wins & Push */}
+                      <div className="grid grid-cols-4 gap-1">
+                        <button
+                          type="button"
+                          onClick={() => handleResolve(player.id, 'WIN_1X')}
+                          className="text-[10px] font-black bg-[#ECFDF5] border border-[#A7F3D0] text-[#065F46] py-1 rounded-lg hover:bg-[#D1FAE5] active:scale-95 transition-all text-center"
+                        >
+                          1x Win
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => handleResolve(player.id, 'SHAN_2X')}
+                          className="text-[10px] font-black bg-[#FFFBEB] border border-[#FCD34D] text-[#92400E] py-1 rounded-lg hover:bg-[#FEF3C7] active:scale-95 transition-all flex items-center justify-center gap-0.5"
+                        >
+                          <Zap className="w-2.5 h-2.5 text-[#D97706]" />
+                          <span>2x Shan</span>
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => handleResolve(player.id, 'MEE_3X')}
+                          className="text-[10px] font-black bg-[#FEF2F2] border border-[#FECACA] text-[#991B1B] py-1 rounded-lg hover:bg-[#FEE2E2] active:scale-95 transition-all flex items-center justify-center gap-0.5"
+                        >
+                          <Flame className="w-2.5 h-2.5 text-[#DC2626]" />
+                          <span>3x Mee</span>
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => handleResolve(player.id, 'PUSH')}
+                          className="text-[10px] font-black bg-[#F8FAFC] border border-[#E2E8F0] text-[#475569] py-1 rounded-lg hover:bg-[#F1F5F9] active:scale-95 transition-all flex items-center justify-center gap-0.5"
+                        >
+                          <ShieldCheck className="w-2.5 h-2.5 text-[#64748B]" />
+                          <span>Push</span>
+                        </button>
+                      </div>
+
+                      {/* Row 2: Dealer Wins (Collect 1x, Dealer Shan 2x, Dealer Mee 3x) */}
+                      <div className="grid grid-cols-3 gap-1">
+                        <button
+                          type="button"
+                          onClick={() => handleResolve(player.id, 'COLLECT')}
+                          className="text-[10px] font-black bg-[#7F1D1D] hover:bg-[#991B1B] text-white py-1 rounded-lg active:scale-95 transition-all text-center"
+                        >
+                          Collect 1x
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => handleResolve(player.id, 'COLLECT_2X')}
+                          className="text-[10px] font-black bg-[#991B1B] hover:bg-[#B91C1C] text-[#FEF08A] py-1 rounded-lg active:scale-95 transition-all flex items-center justify-center gap-0.5"
+                        >
+                          <Zap className="w-2.5 h-2.5 text-[#FEF08A]" />
+                          <span>Dealer Shan 2x</span>
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => handleResolve(player.id, 'COLLECT_3X')}
+                          className="text-[10px] font-black bg-[#450A0A] hover:bg-[#5E0D0D] text-[#FECACA] py-1 rounded-lg active:scale-95 transition-all flex items-center justify-center gap-0.5"
+                        >
+                          <Flame className="w-2.5 h-2.5 text-[#F87171]" />
+                          <span>Dealer Mee 3x</span>
+                        </button>
+                      </div>
+                    </div>
+                  )}
                 </div>
-
-                {/* Spacious 2-tier Resolution Buttons */}
-                {isCurrentPlayerBanker ? (
-                  <div className="flex flex-col gap-1 pt-0.5">
-                    {/* Row 1: Player Wins & Push */}
-                    <div className="grid grid-cols-4 gap-1">
-                      <button
-                        type="button"
-                        onClick={() => handleResolve(player.id, 'WIN_1X')}
-                        className="text-[10px] font-black bg-[#ECFDF5] border border-[#A7F3D0] text-[#065F46] py-1 rounded-lg hover:bg-[#D1FAE5] active:scale-95 transition-all text-center"
-                      >
-                        1x Win
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => handleResolve(player.id, 'SHAN_2X')}
-                        className="text-[10px] font-black bg-[#FFFBEB] border border-[#FCD34D] text-[#92400E] py-1 rounded-lg hover:bg-[#FEF3C7] active:scale-95 transition-all flex items-center justify-center gap-0.5"
-                      >
-                        <Zap className="w-2.5 h-2.5 text-[#D97706]" />
-                        <span>2x Shan</span>
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => handleResolve(player.id, 'MEE_3X')}
-                        className="text-[10px] font-black bg-[#FEF2F2] border border-[#FECACA] text-[#991B1B] py-1 rounded-lg hover:bg-[#FEE2E2] active:scale-95 transition-all flex items-center justify-center gap-0.5"
-                      >
-                        <Flame className="w-2.5 h-2.5 text-[#DC2626]" />
-                        <span>3x Mee</span>
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => handleResolve(player.id, 'PUSH')}
-                        className="text-[10px] font-black bg-[#F8FAFC] border border-[#E2E8F0] text-[#475569] py-1 rounded-lg hover:bg-[#F1F5F9] active:scale-95 transition-all flex items-center justify-center gap-0.5"
-                      >
-                        <ShieldCheck className="w-2.5 h-2.5 text-[#64748B]" />
-                        <span>Push</span>
-                      </button>
-                    </div>
-
-                    {/* Row 2: Dealer Wins (Collect 1x, Dealer Shan 2x, Dealer Mee 3x) */}
-                    <div className="grid grid-cols-3 gap-1">
-                      <button
-                        type="button"
-                        onClick={() => handleResolve(player.id, 'COLLECT')}
-                        className="text-[10px] font-black bg-[#7F1D1D] hover:bg-[#991B1B] text-white py-1 rounded-lg active:scale-95 transition-all text-center"
-                      >
-                        Collect 1x
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => handleResolve(player.id, 'COLLECT_2X')}
-                        className="text-[10px] font-black bg-[#991B1B] hover:bg-[#B91C1C] text-[#FEF08A] py-1 rounded-lg active:scale-95 transition-all flex items-center justify-center gap-0.5"
-                      >
-                        <Zap className="w-2.5 h-2.5 text-[#FEF08A]" />
-                        <span>Dealer Shan 2x</span>
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => handleResolve(player.id, 'COLLECT_3X')}
-                        className="text-[10px] font-black bg-[#450A0A] hover:bg-[#5E0D0D] text-[#FECACA] py-1 rounded-lg active:scale-95 transition-all flex items-center justify-center gap-0.5"
-                      >
-                        <Flame className="w-2.5 h-2.5 text-[#F87171]" />
-                        <span>Dealer Mee 3x</span>
-                      </button>
-                    </div>
-                  </div>
-                ) : (
-                  <div className="text-[10px] font-medium text-[#94A3B8] italic text-center py-0.5">
-                    Awaiting Dealer resolution...
-                  </div>
-                )}
-              </div>
-            ))}
+              );
+            })}
           </div>
         )}
       </div>

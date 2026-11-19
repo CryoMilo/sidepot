@@ -10,6 +10,7 @@ export type NetworkMessageType =
   | 'RESOLVE_BET'
   | 'ROTATE_BANKER'
   | 'TOP_UP'
+  | 'ADJUST_CHIPS'
   | 'TRANSFER_DEBT'
   | 'REPAY_DEBT'
   | 'CLEAR_REPAYMENT_ALERT'

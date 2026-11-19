@@ -392,6 +392,22 @@ export function topUpPlayerChips(state: TableState, playerId: string, amount: nu
   };
 }
 
+export function adjustPlayerChips(state: TableState, playerId: string, amount: number): TableState {
+  const player = state.players[playerId];
+  if (!player) return state;
+
+  return {
+    ...state,
+    players: {
+      ...state.players,
+      [playerId]: {
+        ...player,
+        chips: Math.max(0, player.chips + amount),
+      },
+    },
+  };
+}
+
 export function verifyZeroSum(state: TableState): { balanced: boolean; netDiscrepancy: number } {
   const totalBuyIns = Object.values(state.players).reduce((sum, p) => sum + p.totalBuyIn, 0);
   const totalChipsInPlay = Object.values(state.players).reduce((sum, p) => sum + p.chips, 0) + state.pot;

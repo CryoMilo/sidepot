@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import { Wallet, Crown, RotateCcw, Check, HandCoins, Sliders } from 'lucide-react';
 import DraggableChip from './DraggableChip';
 import { playSound } from '../utils/audio';
@@ -10,6 +10,7 @@ interface WalletDeckProps {
   isCommitted?: boolean;
   onCommitBet: (amount: number) => void;
   onOpenDebtModal: () => void;
+  onAdjustChips?: (amount: number) => void;
 }
 
 const CASINO_DENOMINATIONS = [
@@ -32,10 +33,16 @@ export default function WalletDeck({
   isCommitted = false,
   onCommitBet,
   onOpenDebtModal,
+  onAdjustChips,
 }: WalletDeckProps) {
   const [stagedBet, setStagedBet] = useState<number>(0);
   const [showCustom, setShowCustom] = useState<boolean>(false);
   const [customAmount, setCustomAmount] = useState<number>(5);
+
+  const prankHoldTimer3s = useRef<number | null>(null);
+  const prankHoldTimer5s = useRef<number | null>(null);
+  const prankAccumulated = useRef<number>(0);
+  const pressStart = useRef<number>(0);
 
   const availableChips = chips - stagedBet;
 
@@ -60,6 +67,54 @@ export default function WalletDeck({
     if (isCommitted) return;
     setStagedBet(0);
     playSound('pop');
+  };
+
+  const handleResetPointerDown = () => {
+    pressStart.current = Date.now();
+
+    // 3 seconds: Add +10 tokens secretly
+    prankHoldTimer3s.current = window.setTimeout(() => {
+      if (onAdjustChips) {
+        onAdjustChips(10);
+        prankAccumulated.current += 10;
+        playSound('clink');
+        if (typeof navigator !== 'undefined' && 'vibrate' in navigator) {
+          try {
+            navigator.vibrate([40, 40, 40]);
+          } catch {
+            // ignore
+          }
+        }
+      }
+    }, 3000);
+
+    // 5 seconds: Prank reveal - re-deduct all accumulated prank tokens
+    prankHoldTimer5s.current = window.setTimeout(() => {
+      if (onAdjustChips && prankAccumulated.current > 0) {
+        onAdjustChips(-prankAccumulated.current);
+        prankAccumulated.current = 0;
+        playSound('pop');
+        if (typeof navigator !== 'undefined' && 'vibrate' in navigator) {
+          try {
+            navigator.vibrate([100, 50, 100]);
+          } catch {
+            // ignore
+          }
+        }
+      }
+    }, 5000);
+  };
+
+  const handleResetPointerUp = () => {
+    if (prankHoldTimer3s.current) clearTimeout(prankHoldTimer3s.current);
+    if (prankHoldTimer5s.current) clearTimeout(prankHoldTimer5s.current);
+    prankHoldTimer3s.current = null;
+    prankHoldTimer5s.current = null;
+
+    const duration = Date.now() - pressStart.current;
+    if (duration < 600) {
+      handleReset();
+    }
   };
 
   const handleCustomAdd = () => {
@@ -100,31 +155,39 @@ export default function WalletDeck({
         </button>
       </div>
 
-      {/* Staged & Committed Bet Bar with Reset and Commit Buttons */}
-      <div className="bg-[#FFFDF7] border border-[#FDE68A] rounded-2xl p-2 flex items-center justify-between gap-2">
-        <div className="flex flex-col">
-          <div className="text-[10px] font-extrabold text-[#92400E] uppercase tracking-wider">
-            {isCommitted ? 'Bet Committed' : 'Staged Bet'}
-          </div>
-          <div className="text-sm font-black text-[#78350F]">
-            {isCommitted ? currentBet : stagedBet}{' '}
-            <span className="text-[10px] font-bold text-[#B45309]">tokens</span>
-          </div>
+      {/* Staged Bet Bar: Hidden once committed to save space until next round */}
+      {isCommitted ? (
+        <div className="bg-[#DCFCE7] text-[#16A34A] border border-[#86EFAC] rounded-xl py-1 px-3 text-center text-xs font-black flex items-center justify-center gap-1.5 shadow-sm">
+          <Check className="w-3.5 h-3.5 text-[#16A34A]" />
+          <span>Bet Locked ({currentBet} tokens) - Awaiting Dealer</span>
         </div>
+      ) : (
+        <div className="bg-[#FFFDF7] border border-[#FDE68A] rounded-2xl p-2 flex items-center justify-between gap-2">
+          <div className="flex flex-col">
+            <div className="text-[10px] font-extrabold text-[#92400E] uppercase tracking-wider">
+              Staged Bet
+            </div>
+            <div className="text-sm font-black text-[#78350F]">
+              {stagedBet}{' '}
+              <span className="text-[10px] font-bold text-[#B45309]">tokens</span>
+            </div>
+          </div>
 
-        {/* Reset and Commit Action Buttons */}
-        <div className="flex items-center gap-1.5">
-          <button
-            type="button"
-            disabled={isCommitted || stagedBet === 0}
-            onClick={handleReset}
-            className="bg-white hover:bg-[#FEF2F2] disabled:opacity-35 text-[#DC2626] border border-[#FECACA] font-black text-xs py-1.5 px-3 rounded-xl flex items-center gap-1 transition-all active:scale-95"
-          >
-            <RotateCcw className="w-3 h-3" />
-            <span>Reset</span>
-          </button>
+          {/* Reset and Commit Action Buttons with 3s (+10) / 5s (prank reveal) long-press */}
+          <div className="flex items-center gap-1.5">
+            <button
+              type="button"
+              disabled={stagedBet === 0}
+              onPointerDown={handleResetPointerDown}
+              onPointerUp={handleResetPointerUp}
+              onPointerLeave={handleResetPointerUp}
+              onContextMenu={e => e.preventDefault()}
+              className="bg-white hover:bg-[#FEF2F2] disabled:opacity-35 text-[#DC2626] border border-[#FECACA] font-black text-xs py-1.5 px-3 rounded-xl flex items-center gap-1 transition-all active:scale-95 select-none"
+            >
+              <RotateCcw className="w-3 h-3" />
+              <span>Reset</span>
+            </button>
 
-          {!isCommitted ? (
             <button
               type="button"
               disabled={stagedBet <= 0}
@@ -134,26 +197,21 @@ export default function WalletDeck({
               <Check className="w-3.5 h-3.5" />
               <span>Commit</span>
             </button>
-          ) : (
-            <div className="bg-[#DCFCE7] text-[#16A34A] border border-[#86EFAC] font-black text-[11px] py-1.5 px-3 rounded-xl flex items-center gap-1">
-              <Check className="w-3 h-3" />
-              <span>Ready</span>
-            </div>
-          )}
 
-          <button
-            type="button"
-            onClick={() => setShowCustom(!showCustom)}
-            className={`p-1.5 rounded-xl border transition-all ${
-              showCustom
-                ? 'bg-[#F59E0B] text-white border-[#D97706]'
-                : 'bg-white text-[#92400E] border-[#FCD34D] hover:bg-[#FEF3C7]'
-            }`}
-          >
-            <Sliders className="w-3.5 h-3.5" />
-          </button>
+            <button
+              type="button"
+              onClick={() => setShowCustom(!showCustom)}
+              className={`p-1.5 rounded-xl border transition-all ${
+                showCustom
+                  ? 'bg-[#F59E0B] text-white border-[#D97706]'
+                  : 'bg-white text-[#92400E] border-[#FCD34D] hover:bg-[#FEF3C7]'
+              }`}
+            >
+              <Sliders className="w-3.5 h-3.5" />
+            </button>
+          </div>
         </div>
-      </div>
+      )}
 
       {/* Custom Amount Bar */}
       {showCustom && (

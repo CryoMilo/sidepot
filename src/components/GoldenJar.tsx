@@ -23,19 +23,20 @@ export default function GoldenJar({
   const mood = getJarMood(playerChips);
 
   return (
-    <div className="flex flex-col items-center justify-center select-none min-h-0 flex-1 shrink">
+    <div className="w-full max-w-md mx-auto flex items-center justify-between px-3.5 py-1.5 bg-gradient-to-r from-[#FFFDF9] via-[#FFF9ED] to-[#FFF3D6] rounded-2xl border-2 border-[#FDE68A] shadow-sm select-none shrink-0">
+      {/* Left: Cute Fluffy Golden Pot with Mood Expressions */}
       <motion.div
-        className="relative cursor-pointer min-h-0 flex items-center justify-center"
+        className="relative cursor-pointer shrink-0 flex items-center justify-center"
         onClick={onClick}
         animate={
           isDancing
             ? {
-                y: [0, -22, 0, -12, 0, -4, 0],
+                y: [0, -14, 0, -8, 0, -3, 0],
                 rotate: [0, -8, 6, -4, 2, 0],
-                scale: [1, 1.15, 0.9, 1.08, 0.95, 1],
+                scale: [1, 1.15, 0.92, 1.08, 0.95, 1],
               }
             : {
-                y: [0, -3, 0],
+                y: [0, -2, 0],
               }
         }
         transition={
@@ -45,7 +46,7 @@ export default function GoldenJar({
         }
       >
         <svg
-          className="h-28 w-28 sm:h-36 sm:w-36 min-h-[96px] max-h-[24vh] drop-shadow-[0_16px_28px_rgba(217,119,6,0.32)] transition-all"
+          className="w-14 h-14 sm:w-16 sm:h-16 drop-shadow-[0_8px_16px_rgba(217,119,6,0.3)] transition-all"
           viewBox="0 0 120 120"
           fill="none"
           xmlns="http://www.w3.org/2000/svg"
@@ -181,11 +182,12 @@ export default function GoldenJar({
         </svg>
       </motion.div>
 
-      <div className="mt-1.5 text-center shrink-0">
-        <span className="text-[11px] font-black uppercase tracking-wider text-[#B45309] bg-[#FEF3C7] px-2.5 py-0.5 rounded-full border border-[#FCD34D]">
+      {/* Right: "Your Pot" Label & Token Count */}
+      <div className="text-right shrink-0">
+        <span className="text-[10px] font-black uppercase tracking-wider text-[#B45309] bg-[#FEF3C7] px-2 py-0.5 rounded-full border border-[#FCD34D]">
           Your Pot
         </span>
-        <div className="text-2xl sm:text-3xl font-black tracking-tight text-[#78350F] leading-tight mt-0.5">
+        <div className="text-xl sm:text-2xl font-black tracking-tight text-[#78350F] leading-tight mt-0.5">
           {playerChips.toLocaleString()} <span className="text-xs font-bold text-[#92400E]">tokens</span>
         </div>
       </div>

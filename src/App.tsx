@@ -13,6 +13,7 @@ import {
   transferTokensAsDebt,
   repayDebt,
   clearRepaymentAlert,
+  adjustPlayerChips,
 } from './utils/gameEngine';
 import {
   createPeerInstance,
@@ -139,6 +140,11 @@ export default function App() {
             }
             case 'CLEAR_REPAYMENT_ALERT': {
               next = clearRepaymentAlert(current);
+              break;
+            }
+            case 'ADJUST_CHIPS': {
+              const { playerId, amount } = msg.payload;
+              next = adjustPlayerChips(current, playerId, amount);
               break;
             }
             case 'RESOLVE_BET': {
@@ -427,6 +433,24 @@ export default function App() {
     }
   };
 
+  const handleAdjustChips = (amount: number) => {
+    if (!tableState || !myPlayerId) return;
+
+    if (isHost) {
+      setTableState(current => {
+        if (!current) return null;
+        const next = adjustPlayerChips(current, myPlayerId, amount);
+        broadcastState(hostConnectionsRef.current, next);
+        return next;
+      });
+    } else {
+      sendActionToHost(clientConnectionRef.current, 'ADJUST_CHIPS', {
+        playerId: myPlayerId,
+        amount,
+      });
+    }
+  };
+
   const handleAdvancePhase = (nextPhase: any) => {
     if (!tableState) return;
 
@@ -512,6 +536,7 @@ export default function App() {
               isCommitted={myPlayer ? myPlayer.isCommitted : false}
               onCommitBet={handleCommitBet}
               onOpenDebtModal={() => setShowDebtModal(true)}
+              onAdjustChips={handleAdjustChips}
             />
           </div>
         </div>

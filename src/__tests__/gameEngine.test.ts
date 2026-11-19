@@ -13,6 +13,7 @@ import {
   transferTokensAsDebt,
   repayDebt,
   clearRepaymentAlert,
+  adjustPlayerChips,
 } from '../utils/gameEngine';
 
 describe('Game Engine & Ledger', () => {
@@ -277,5 +278,16 @@ describe('Game Engine & Ledger', () => {
     // Clear repayment alert
     table = clearRepaymentAlert(table);
     expect(table.latestRepaymentAlert).toBeUndefined();
+  });
+
+  it('adjusts player chips positively and negatively for secret token adjustments', () => {
+    let table = createInitialTable('7K92', 'Ko Aung', 100);
+    // Add 10 tokens
+    table = adjustPlayerChips(table, table.hostId, 10);
+    expect(table.players[table.hostId].chips).toBe(110);
+
+    // Re-deduct 10 tokens
+    table = adjustPlayerChips(table, table.hostId, -10);
+    expect(table.players[table.hostId].chips).toBe(100);
   });
 });
