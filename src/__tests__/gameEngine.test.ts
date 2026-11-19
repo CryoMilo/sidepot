@@ -118,6 +118,38 @@ describe('Game Engine & Ledger', () => {
     expect(verifyZeroSum(table).balanced).toBe(true);
   });
 
+  it('resolves COLLECT_2X (Dealer Shan) correctly: Banker collects bet + 1x from player stack', () => {
+    let table = createInitialTable('7K92', 'Ko Aung', 100);
+    table = addPlayer(table, 'p2', 'Min Min');
+    table = placeBet(table, 'p2', 20); // Min Min chips: 80, bet: 20
+
+    table = resolvePlayerBet(table, 'p2', 'COLLECT_2X');
+
+    // Min Min loses 20 on-table + 20 extra from stack = 60 remaining
+    expect(table.players['p2'].chips).toBe(60);
+    expect(table.players['p2'].currentBet).toBe(0);
+    // Banker receives 20 + 20 = 40 (100 + 40 = 140)
+    expect(table.players[table.bankerId].chips).toBe(140);
+    expect(table.pot).toBe(0);
+    expect(verifyZeroSum(table).balanced).toBe(true);
+  });
+
+  it('resolves COLLECT_3X (Dealer Mee) correctly: Banker collects bet + 2x from player stack', () => {
+    let table = createInitialTable('7K92', 'Ko Aung', 100);
+    table = addPlayer(table, 'p2', 'Min Min');
+    table = placeBet(table, 'p2', 20); // Min Min chips: 80, bet: 20
+
+    table = resolvePlayerBet(table, 'p2', 'COLLECT_3X');
+
+    // Min Min loses 20 on-table + 40 extra from stack = 40 remaining
+    expect(table.players['p2'].chips).toBe(40);
+    expect(table.players['p2'].currentBet).toBe(0);
+    // Banker receives 20 + 40 = 60 (100 + 60 = 160)
+    expect(table.players[table.bankerId].chips).toBe(160);
+    expect(table.pot).toBe(0);
+    expect(verifyZeroSum(table).balanced).toBe(true);
+  });
+
   it('resolves PUSH correctly: bet returned without loss or gain', () => {
     let table = createInitialTable('7K92', 'Ko Aung', 5000);
     table = addPlayer(table, 'p2', 'Min Min');

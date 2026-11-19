@@ -262,10 +262,24 @@ export function resolvePlayerBet(state: TableState, playerId: string, outcome: B
       bankerChipDelta = -(bet * 3);
       break;
     case 'COLLECT':
-      // Banker keeps bet; player gets 0 back
+      // Banker keeps on-table bet (1x); player gets 0 back
       playerChipDelta = 0;
       bankerChipDelta = bet;
       break;
+    case 'COLLECT_2X': {
+      // Dealer Shan (2x): Banker keeps on-table bet + collects additional 1x from player's stack
+      const extra2x = Math.min(player.chips, bet);
+      playerChipDelta = -extra2x;
+      bankerChipDelta = bet + extra2x;
+      break;
+    }
+    case 'COLLECT_3X': {
+      // Dealer Mee (3x): Banker keeps on-table bet + collects additional 2x from player's stack
+      const extra3x = Math.min(player.chips, bet * 2);
+      playerChipDelta = -extra3x;
+      bankerChipDelta = bet + extra3x;
+      break;
+    }
     case 'PUSH':
       // Push: Bet returned to player without gain/loss
       playerChipDelta = bet;

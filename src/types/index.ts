@@ -24,7 +24,14 @@ export interface DebtRecord {
 
 export type TablePhase = 'BETTING' | 'DEALING' | 'RESOLVING' | 'ROUND_SUMMARY';
 
-export type BetOutcome = 'WIN_1X' | 'SHAN_2X' | 'MEE_3X' | 'COLLECT' | 'PUSH';
+export type BetOutcome =
+  | 'WIN_1X'
+  | 'SHAN_2X'
+  | 'MEE_3X'
+  | 'PUSH'
+  | 'COLLECT'
+  | 'COLLECT_2X'
+  | 'COLLECT_3X';
 
 export interface TableState {
   roomId: string;

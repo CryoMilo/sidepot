@@ -175,45 +175,68 @@ export default function BankerControls({
 
                 {/* Spacious 2-tier Resolution Buttons */}
                 {isCurrentPlayerBanker ? (
-                  <div className="grid grid-cols-5 gap-1 pt-0.5">
-                    <button
-                      type="button"
-                      onClick={() => handleResolve(player.id, 'WIN_1X')}
-                      className="text-[10px] font-black bg-[#ECFDF5] border border-[#A7F3D0] text-[#065F46] py-1 rounded-lg hover:bg-[#D1FAE5] active:scale-95 transition-all text-center"
-                    >
-                      1x Win
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => handleResolve(player.id, 'SHAN_2X')}
-                      className="text-[10px] font-black bg-[#FFFBEB] border border-[#FCD34D] text-[#92400E] py-1 rounded-lg hover:bg-[#FEF3C7] active:scale-95 transition-all flex items-center justify-center gap-0.5"
-                    >
-                      <Zap className="w-2.5 h-2.5 text-[#D97706]" />
-                      <span>2x</span>
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => handleResolve(player.id, 'MEE_3X')}
-                      className="text-[10px] font-black bg-[#FEF2F2] border border-[#FECACA] text-[#991B1B] py-1 rounded-lg hover:bg-[#FEE2E2] active:scale-95 transition-all flex items-center justify-center gap-0.5"
-                    >
-                      <Flame className="w-2.5 h-2.5 text-[#DC2626]" />
-                      <span>3x</span>
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => handleResolve(player.id, 'PUSH')}
-                      className="text-[10px] font-black bg-[#F8FAFC] border border-[#E2E8F0] text-[#475569] py-1 rounded-lg hover:bg-[#F1F5F9] active:scale-95 transition-all flex items-center justify-center gap-0.5"
-                    >
-                      <ShieldCheck className="w-2.5 h-2.5 text-[#64748B]" />
-                      <span>Push</span>
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => handleResolve(player.id, 'COLLECT')}
-                      className="text-[10px] font-black bg-[#7F1D1D] text-white py-1 rounded-lg hover:bg-[#991B1B] active:scale-95 transition-all text-center"
-                    >
-                      Collect
-                    </button>
+                  <div className="flex flex-col gap-1 pt-0.5">
+                    {/* Row 1: Player Wins & Push */}
+                    <div className="grid grid-cols-4 gap-1">
+                      <button
+                        type="button"
+                        onClick={() => handleResolve(player.id, 'WIN_1X')}
+                        className="text-[10px] font-black bg-[#ECFDF5] border border-[#A7F3D0] text-[#065F46] py-1 rounded-lg hover:bg-[#D1FAE5] active:scale-95 transition-all text-center"
+                      >
+                        1x Win
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => handleResolve(player.id, 'SHAN_2X')}
+                        className="text-[10px] font-black bg-[#FFFBEB] border border-[#FCD34D] text-[#92400E] py-1 rounded-lg hover:bg-[#FEF3C7] active:scale-95 transition-all flex items-center justify-center gap-0.5"
+                      >
+                        <Zap className="w-2.5 h-2.5 text-[#D97706]" />
+                        <span>2x Shan</span>
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => handleResolve(player.id, 'MEE_3X')}
+                        className="text-[10px] font-black bg-[#FEF2F2] border border-[#FECACA] text-[#991B1B] py-1 rounded-lg hover:bg-[#FEE2E2] active:scale-95 transition-all flex items-center justify-center gap-0.5"
+                      >
+                        <Flame className="w-2.5 h-2.5 text-[#DC2626]" />
+                        <span>3x Mee</span>
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => handleResolve(player.id, 'PUSH')}
+                        className="text-[10px] font-black bg-[#F8FAFC] border border-[#E2E8F0] text-[#475569] py-1 rounded-lg hover:bg-[#F1F5F9] active:scale-95 transition-all flex items-center justify-center gap-0.5"
+                      >
+                        <ShieldCheck className="w-2.5 h-2.5 text-[#64748B]" />
+                        <span>Push</span>
+                      </button>
+                    </div>
+
+                    {/* Row 2: Dealer Wins (Collect 1x, Dealer Shan 2x, Dealer Mee 3x) */}
+                    <div className="grid grid-cols-3 gap-1">
+                      <button
+                        type="button"
+                        onClick={() => handleResolve(player.id, 'COLLECT')}
+                        className="text-[10px] font-black bg-[#7F1D1D] hover:bg-[#991B1B] text-white py-1 rounded-lg active:scale-95 transition-all text-center"
+                      >
+                        Collect 1x
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => handleResolve(player.id, 'COLLECT_2X')}
+                        className="text-[10px] font-black bg-[#991B1B] hover:bg-[#B91C1C] text-[#FEF08A] py-1 rounded-lg active:scale-95 transition-all flex items-center justify-center gap-0.5"
+                      >
+                        <Zap className="w-2.5 h-2.5 text-[#FEF08A]" />
+                        <span>Dealer Shan 2x</span>
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => handleResolve(player.id, 'COLLECT_3X')}
+                        className="text-[10px] font-black bg-[#450A0A] hover:bg-[#5E0D0D] text-[#FECACA] py-1 rounded-lg active:scale-95 transition-all flex items-center justify-center gap-0.5"
+                      >
+                        <Flame className="w-2.5 h-2.5 text-[#F87171]" />
+                        <span>Dealer Mee 3x</span>
+                      </button>
+                    </div>
                   </div>
                 ) : (
                   <div className="text-[10px] font-medium text-[#94A3B8] italic text-center py-0.5">

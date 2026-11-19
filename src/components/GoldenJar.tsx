@@ -45,7 +45,7 @@ export default function GoldenJar({
         }
       >
         <svg
-          className="h-20 w-20 min-h-[60px] max-h-[17vh] sm:h-28 sm:w-28 drop-shadow-[0_12px_20px_rgba(217,119,6,0.28)] transition-all"
+          className="h-28 w-28 sm:h-36 sm:w-36 min-h-[96px] max-h-[24vh] drop-shadow-[0_16px_28px_rgba(217,119,6,0.32)] transition-all"
           viewBox="0 0 120 120"
           fill="none"
           xmlns="http://www.w3.org/2000/svg"
@@ -181,11 +181,11 @@ export default function GoldenJar({
         </svg>
       </motion.div>
 
-      <div className="mt-1 text-center shrink-0">
-        <span className="text-[10px] font-extrabold uppercase tracking-wider text-[#B45309]">
+      <div className="mt-1.5 text-center shrink-0">
+        <span className="text-[11px] font-black uppercase tracking-wider text-[#B45309] bg-[#FEF3C7] px-2.5 py-0.5 rounded-full border border-[#FCD34D]">
           Your Pot
         </span>
-        <div className="text-xl sm:text-2xl font-black tracking-tight text-[#78350F] leading-tight">
+        <div className="text-2xl sm:text-3xl font-black tracking-tight text-[#78350F] leading-tight mt-0.5">
           {playerChips.toLocaleString()} <span className="text-xs font-bold text-[#92400E]">tokens</span>
         </div>
       </div>
