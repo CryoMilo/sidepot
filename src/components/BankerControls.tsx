@@ -80,7 +80,7 @@ export default function BankerControls({
                   value={p.id}
                   disabled={!eligible && p.id !== state.bankerId}
                 >
-                  Crown {p.name} {eligible ? `(${p.chips} tkn)` : `(Needs 20+)`}
+                  Crown {p.name} {eligible ? '' : '(Needs 20+)'}
                 </option>
               );
             })}

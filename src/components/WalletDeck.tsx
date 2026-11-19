@@ -13,17 +13,17 @@ interface WalletDeckProps {
   onOpenDebtModal: () => void;
 }
 
-const TOKEN_DENOMINATIONS = [
-  { val: 1, gradient: 'bg-[radial-gradient(circle_at_35%_30%,#38BDF8,#0284C7)]', text: '#FFFFFF' },
-  { val: 2, gradient: 'bg-[radial-gradient(circle_at_35%_30%,#60A5FA,#2563EB)]', text: '#FFFFFF' },
-  { val: 5, gradient: 'bg-[radial-gradient(circle_at_35%_30%,#FDE047,#D97706)]', text: '#78350F' },
-  { val: 10, gradient: 'bg-[radial-gradient(circle_at_35%_30%,#F59E0B,#B45309)]', text: '#FFFFFF' },
-  { val: 15, gradient: 'bg-[radial-gradient(circle_at_35%_30%,#34D399,#059669)]', text: '#FFFFFF' },
-  { val: 20, gradient: 'bg-[radial-gradient(circle_at_35%_30%,#10B981,#047857)]', text: '#FFFFFF' },
-  { val: 25, gradient: 'bg-[radial-gradient(circle_at_35%_30%,#FB923C,#EA580C)]', text: '#FFFFFF' },
-  { val: 30, gradient: 'bg-[radial-gradient(circle_at_35%_30%,#F97316,#C2410C)]', text: '#FFFFFF' },
-  { val: 35, gradient: 'bg-[radial-gradient(circle_at_35%_30%,#FB7185,#E11D48)]', text: '#FFFFFF' },
-  { val: 40, gradient: 'bg-[radial-gradient(circle_at_35%_30%,#F43F5E,#BE123C)]', text: '#FFFFFF' },
+const CASINO_DENOMINATIONS = [
+  { val: 1, label: '1', clayColor: '#CBD5E1', stripeColor: '#0284C7', textColor: '#1E293B', accentRing: '#94A3B8' },
+  { val: 2, label: '2', clayColor: '#0284C7', stripeColor: '#FFFFFF', textColor: '#0369A1', accentRing: '#BAE6FD' },
+  { val: 5, label: '5', clayColor: '#DC2626', stripeColor: '#FFFFFF', textColor: '#B91C1C', accentRing: '#FCA5A5' },
+  { val: 10, label: '10', clayColor: '#2563EB', stripeColor: '#FBBF24', textColor: '#1D4ED8', accentRing: '#93C5FD' },
+  { val: 15, label: '15', clayColor: '#0D9488', stripeColor: '#FFFFFF', textColor: '#0F766E', accentRing: '#99F6E4' },
+  { val: 20, label: '20', clayColor: '#059669', stripeColor: '#FDE047', textColor: '#047857', accentRing: '#A7F3D0' },
+  { val: 25, label: '25', clayColor: '#16A34A', stripeColor: '#F59E0B', textColor: '#15803D', accentRing: '#FCD34D' },
+  { val: 30, label: '30', clayColor: '#EA580C', stripeColor: '#FFFFFF', textColor: '#C2410C', accentRing: '#FDBA74' },
+  { val: 35, label: '35', clayColor: '#DB2777', stripeColor: '#FFFFFF', textColor: '#BE185D', accentRing: '#FBCFE8' },
+  { val: 40, label: '40', clayColor: '#7C3AED', stripeColor: '#FDE047', textColor: '#6D28D9', accentRing: '#DDD6FE' },
 ];
 
 export default function WalletDeck({
@@ -74,20 +74,20 @@ export default function WalletDeck({
 
   return (
     <div className="bg-white rounded-[26px] p-3 shadow-[0_8px_25px_rgba(180,83,9,0.07)] border-2 border-[#FFF1CD] w-full max-w-md mx-auto touch-none select-none flex flex-col gap-2">
-      {/* Top Header Row: Stack & Transfer Action */}
+      {/* Top Header Row: Role Banner & Transfer Action (No Repeating Token Counts) */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-1.5">
           {isBanker ? (
-            <Crown className="w-4 h-4 text-[#D97706]" />
+            <div className="flex items-center gap-1 text-[11px] font-black text-[#B45309] bg-[#FEF3C7] px-2.5 py-0.5 rounded-xl border border-[#FCD34D]">
+              <Crown className="w-3.5 h-3.5 text-[#D97706]" />
+              <span>You are Dealer</span>
+            </div>
           ) : (
-            <Wallet className="w-4 h-4 text-[#92400E]" />
+            <div className="flex items-center gap-1.5 text-[11px] font-extrabold text-[#92400E]">
+              <Wallet className="w-3.5 h-3.5 text-[#B45309]" />
+              <span>Casino Chips</span>
+            </div>
           )}
-          <span className="text-xs font-black text-[#78350F]">
-            {isBanker ? 'Dealer' : 'You'}:
-          </span>
-          <span className="text-sm font-black text-[#D97706] tabular-nums">
-            {availableChips} tokens
-          </span>
         </div>
 
         {/* Transfer / QR Debts Button */}
@@ -195,28 +195,33 @@ export default function WalletDeck({
         </div>
       )}
 
-      {/* Horizontal Scrollable Draggable Chip Rack */}
+      {/* Horizontal Scrollable Draggable Casino Chip Rack */}
       <div className="relative w-full">
-        <div className="flex gap-2 overflow-x-auto no-scrollbar py-0.5 px-0.5 touch-pan-x">
-          {TOKEN_DENOMINATIONS.map(denom => (
+        <div className="flex gap-2.5 overflow-x-auto no-scrollbar py-1 px-1 touch-pan-x">
+          {CASINO_DENOMINATIONS.map(denom => (
             <DraggableChip
               key={denom.val}
               amount={denom.val}
-              label={String(denom.val)}
-              gradientClass={denom.gradient}
-              textColor={denom.text}
+              label={denom.label}
+              clayColor={denom.clayColor}
+              stripeColor={denom.stripeColor}
+              textColor={denom.textColor}
+              accentRing={denom.accentRing}
               disabled={availableChips < denom.val}
               onBet={handleStageChip}
             />
           ))}
 
-          {/* ALL-IN Chip */}
+          {/* ALL-IN Casino Chip (Onyx Black & Gold) */}
           <DraggableChip
             amount={availableChips}
             label="ALL IN"
-            subLabel={`${availableChips} TKN`}
-            gradientClass="bg-[radial-gradient(circle_at_35%_30%,#A855F7,#7E22CE)]"
-            textColor="#FFFFFF"
+            subLabel="MAX"
+            clayColor="#18181B"
+            stripeColor="#F59E0B"
+            inlayBg="#09090B"
+            textColor="#FDE047"
+            accentRing="#F59E0B"
             disabled={availableChips <= 0}
             onBet={handleStageChip}
           />

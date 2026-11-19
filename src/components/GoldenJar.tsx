@@ -10,14 +10,13 @@ export function getJarMood(chips: number): JarMood {
 
 interface GoldenJarProps {
   playerChips: number;
-  potTotal: number;
+  potTotal?: number;
   isDancing?: boolean;
   onClick?: () => void;
 }
 
 export default function GoldenJar({
   playerChips,
-  potTotal,
   isDancing = false,
   onClick,
 }: GoldenJarProps) {
@@ -184,10 +183,10 @@ export default function GoldenJar({
 
       <div className="mt-1 text-center shrink-0">
         <span className="text-[10px] font-extrabold uppercase tracking-wider text-[#B45309]">
-          Table Pot
+          Your Pot
         </span>
         <div className="text-xl sm:text-2xl font-black tracking-tight text-[#78350F] leading-tight">
-          {potTotal.toLocaleString()} <span className="text-xs font-bold text-[#92400E]">tokens</span>
+          {playerChips.toLocaleString()} <span className="text-xs font-bold text-[#92400E]">tokens</span>
         </div>
       </div>
     </div>

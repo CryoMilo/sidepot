@@ -503,7 +503,6 @@ export default function App() {
           <div className="flex-1 flex items-center justify-center min-h-0 py-0.5">
             <GoldenJar
               playerChips={myPlayer ? myPlayer.chips : tableState.defaultBuyIn}
-              potTotal={tableState.pot}
               isDancing={isJarDancing}
               onClick={triggerJarDance}
             />
