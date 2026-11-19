@@ -59,26 +59,29 @@ export default function DraggableChip({
     onBet(amount);
   };
 
-  const sizeClasses = size === 'large' ? 'w-20 h-20' : 'w-16 h-16 sm:w-[68px] sm:h-[68px]';
+  const sizeClasses = size === 'large' ? 'w-24 h-24' : 'w-[76px] h-[76px] sm:w-[84px] sm:h-[84px]';
   const edgeAngles = [0, 60, 120, 180, 240, 300];
 
   return (
     <div
-      className={`relative ${sizeClasses} shrink-0 flex items-center justify-center touch-none select-none`}
+      className={`relative ${sizeClasses} shrink-0 flex items-center justify-center select-none`}
+      style={{ touchAction: 'pan-x' }}
     >
       <motion.div
-        drag={!disabled}
-        dragConstraints={{ left: 0, right: 0, top: 0, bottom: 0 }}
-        dragElastic={0.6}
+        drag={!disabled ? 'y' : false}
+        dragDirectionLock
+        dragConstraints={{ top: -220, bottom: 0 }}
+        dragElastic={0.4}
         dragTransition={{ bounceStiffness: 450, bounceDamping: 25 }}
         onDragStart={handleDragStart}
         onDragEnd={handleDragEnd}
         onClick={handleClick}
-        whileHover={{ scale: disabled ? 1 : 1.08 }}
-        whileTap={{ scale: disabled ? 1 : 1.15 }}
-        className={`w-full h-full cursor-grab active:cursor-grabbing select-none touch-none ${
+        whileHover={{ scale: disabled ? 1 : 1.06 }}
+        whileTap={{ scale: disabled ? 1 : 1.12 }}
+        className={`w-full h-full cursor-grab active:cursor-grabbing select-none ${
           disabled ? 'opacity-35 cursor-not-allowed' : ''
         }`}
+        style={{ touchAction: 'pan-x' }}
       >
         <svg
           viewBox="0 0 100 100"

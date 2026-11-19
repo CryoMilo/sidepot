@@ -73,7 +73,7 @@ export default function WalletDeck({
   };
 
   return (
-    <div className="bg-white rounded-[26px] p-3 shadow-[0_8px_25px_rgba(180,83,9,0.07)] border-2 border-[#FFF1CD] w-full max-w-md mx-auto touch-none select-none flex flex-col gap-2">
+    <div className="bg-white rounded-[28px] p-3.5 sm:p-4 shadow-[0_10px_30px_rgba(180,83,9,0.09)] border-2 border-[#FFE8B5] w-full max-w-md mx-auto touch-none select-none flex flex-col gap-2.5">
       {/* Top Header Row: Role Banner & Transfer Action (No Repeating Token Counts) */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-1.5">
@@ -195,9 +195,9 @@ export default function WalletDeck({
         </div>
       )}
 
-      {/* Horizontal Scrollable Draggable Casino Chip Rack */}
-      <div className="relative w-full">
-        <div className="flex gap-2.5 overflow-x-auto no-scrollbar py-1 px-1 touch-pan-x">
+      {/* Horizontal Scrollable Draggable Casino Chip Rack with Dedicated Tray Styling */}
+      <div className="relative w-full bg-[#FFFDF5] rounded-2xl p-2 sm:p-2.5 border border-[#FDE68A]/80 shadow-inner">
+        <div className="flex gap-4 sm:gap-5 overflow-x-auto no-scrollbar py-1.5 px-2 touch-pan-x items-center">
           {CASINO_DENOMINATIONS.map(denom => (
             <DraggableChip
               key={denom.val}
