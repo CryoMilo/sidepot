@@ -24,9 +24,9 @@ export default function GoldenJar({
   const mood = getJarMood(playerChips);
 
   return (
-    <div className="flex flex-col items-center justify-center py-2 select-none">
+    <div className="flex flex-col items-center justify-center select-none min-h-0 flex-1 shrink">
       <motion.div
-        className="relative cursor-pointer"
+        className="relative cursor-pointer min-h-0 flex items-center justify-center"
         onClick={onClick}
         animate={
           isDancing
@@ -46,7 +46,7 @@ export default function GoldenJar({
         }
       >
         <svg
-          className="w-32 h-32 md:w-36 md:h-36 drop-shadow-[0_16px_24px_rgba(217,119,6,0.32)]"
+          className="h-20 w-20 min-h-[60px] max-h-[17vh] sm:h-28 sm:w-28 drop-shadow-[0_12px_20px_rgba(217,119,6,0.28)] transition-all"
           viewBox="0 0 120 120"
           fill="none"
           xmlns="http://www.w3.org/2000/svg"
@@ -182,12 +182,12 @@ export default function GoldenJar({
         </svg>
       </motion.div>
 
-      <div className="mt-2 text-center">
-        <span className="text-[11px] font-extrabold uppercase tracking-wider text-[#B45309]">
+      <div className="mt-1 text-center shrink-0">
+        <span className="text-[10px] font-extrabold uppercase tracking-wider text-[#B45309]">
           Table Pot
         </span>
-        <div className="text-3xl font-black tracking-tight text-[#78350F]">
-          ${potTotal.toLocaleString()}
+        <div className="text-xl sm:text-2xl font-black tracking-tight text-[#78350F] leading-tight">
+          {potTotal.toLocaleString()} <span className="text-xs font-bold text-[#92400E]">tokens</span>
         </div>
       </div>
     </div>

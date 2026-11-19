@@ -3,11 +3,16 @@ import {
   createInitialTable,
   addPlayer,
   placeBet,
+  commitPlayerBet,
+  resetPlayerBet,
   resolvePlayerBet,
   rotateBanker,
   verifyZeroSum,
   advancePhase,
   topUpPlayerChips,
+  transferTokensAsDebt,
+  repayDebt,
+  clearRepaymentAlert,
 } from '../utils/gameEngine';
 
 describe('Game Engine & Ledger', () => {
@@ -191,5 +196,54 @@ describe('Game Engine & Ledger', () => {
     expect(table.players['p2'].currentBet).toBe(0);
     expect(table.pot).toBe(0);
     expect(verifyZeroSum(table).balanced).toBe(true);
+  });
+
+  it('handles commit and reset of player bets', () => {
+    let table = createInitialTable('7K92', 'Ko Aung', 100);
+    table = addPlayer(table, 'p2', 'Min Min');
+
+    // Commit bet
+    table = commitPlayerBet(table, 'p2', 25);
+    expect(table.players['p2'].chips).toBe(75);
+    expect(table.players['p2'].currentBet).toBe(25);
+    expect(table.players['p2'].isCommitted).toBe(true);
+    expect(table.pot).toBe(25);
+
+    // Reset bet
+    table = resetPlayerBet(table, 'p2');
+    expect(table.players['p2'].chips).toBe(100);
+    expect(table.players['p2'].currentBet).toBe(0);
+    expect(table.players['p2'].isCommitted).toBe(false);
+    expect(table.pot).toBe(0);
+  });
+
+  it('manages peer token debt ledger and repayment flow', () => {
+    let table = createInitialTable('7K92', 'Ko Aung', 100);
+    table = addPlayer(table, 'p2', 'Min Min');
+
+    // Ko Aung lends 30 tokens to Min Min
+    table = transferTokensAsDebt(table, table.hostId, 'p2', 30);
+    expect(table.players[table.hostId].chips).toBe(70);
+    expect(table.players['p2'].chips).toBe(130);
+    expect(table.debts).toHaveLength(1);
+
+    const debt = table.debts[0];
+    expect(debt.lenderId).toBe(table.hostId);
+    expect(debt.borrowerId).toBe('p2');
+    expect(debt.amount).toBe(30);
+    expect(debt.status).toBe('UNPAID');
+
+    // Min Min repays debt
+    table = repayDebt(table, debt.id, 'p2');
+    expect(table.players['p2'].chips).toBe(100);
+    expect(table.players[table.hostId].chips).toBe(100);
+    expect(table.debts[0].status).toBe('REPAID');
+    expect(table.latestRepaymentAlert).toBeDefined();
+    expect(table.latestRepaymentAlert?.lenderId).toBe(table.hostId);
+    expect(table.latestRepaymentAlert?.amount).toBe(30);
+
+    // Clear repayment alert
+    table = clearRepaymentAlert(table);
+    expect(table.latestRepaymentAlert).toBeUndefined();
   });
 });

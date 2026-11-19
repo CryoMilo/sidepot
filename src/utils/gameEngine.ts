@@ -1,4 +1,4 @@
-import { TableState, Player, BetOutcome, TablePhase } from '../types';
+import { TableState, Player, BetOutcome, TablePhase, DebtRecord } from '../types';
 
 const AVATAR_COLORS = [
   '#0284C7', // Sky
@@ -21,6 +21,7 @@ export function createInitialTable(roomId: string, hostName: string, buyIn: numb
     isBanker: true,
     isConnected: true,
     totalBuyIn: buyIn,
+    isCommitted: false,
   };
 
   return {
@@ -33,6 +34,7 @@ export function createInitialTable(roomId: string, hostName: string, buyIn: numb
     players: {
       [hostId]: hostPlayer,
     },
+    debts: [],
     phase: 'BETTING',
   };
 }
@@ -61,6 +63,7 @@ export function addPlayer(state: TableState, playerId: string, name: string): Ta
     isBanker: false,
     isConnected: true,
     totalBuyIn: state.defaultBuyIn,
+    isCommitted: false,
   };
 
   return {
@@ -95,6 +98,138 @@ export function placeBet(state: TableState, playerId: string, amount: number): T
         currentBet: player.currentBet + amount,
       },
     },
+  };
+}
+
+export function commitPlayerBet(state: TableState, playerId: string, amount: number): TableState {
+  const player = state.players[playerId];
+  if (!player || amount <= 0 || player.chips < amount) {
+    return state;
+  }
+
+  return {
+    ...state,
+    pot: state.pot + amount,
+    players: {
+      ...state.players,
+      [playerId]: {
+        ...player,
+        chips: player.chips - amount,
+        currentBet: player.currentBet + amount,
+        isCommitted: true,
+      },
+    },
+  };
+}
+
+export function resetPlayerBet(state: TableState, playerId: string): TableState {
+  const player = state.players[playerId];
+  if (!player || player.currentBet <= 0) return state;
+
+  return {
+    ...state,
+    pot: Math.max(0, state.pot - player.currentBet),
+    players: {
+      ...state.players,
+      [playerId]: {
+        ...player,
+        chips: player.chips + player.currentBet,
+        currentBet: 0,
+        isCommitted: false,
+      },
+    },
+  };
+}
+
+export function transferTokensAsDebt(
+  state: TableState,
+  lenderId: string,
+  borrowerId: string,
+  amount: number
+): TableState {
+  const lender = state.players[lenderId];
+  const borrower = state.players[borrowerId];
+
+  if (!lender || !borrower || lenderId === borrowerId || amount <= 0 || lender.chips < amount) {
+    return state;
+  }
+
+  const newDebt: DebtRecord = {
+    id: 'debt-' + Math.random().toString(36).substring(2, 9),
+    lenderId,
+    lenderName: lender.name,
+    borrowerId,
+    borrowerName: borrower.name,
+    amount,
+    status: 'UNPAID',
+    createdAt: Date.now(),
+  };
+
+  return {
+    ...state,
+    debts: [...(state.debts || []), newDebt],
+    players: {
+      ...state.players,
+      [lenderId]: {
+        ...lender,
+        chips: lender.chips - amount,
+      },
+      [borrowerId]: {
+        ...borrower,
+        chips: borrower.chips + amount,
+      },
+    },
+  };
+}
+
+export function repayDebt(
+  state: TableState,
+  debtId: string,
+  borrowerId: string
+): TableState {
+  const debt = (state.debts || []).find(
+    d => d.id === debtId && d.borrowerId === borrowerId && d.status === 'UNPAID'
+  );
+  if (!debt) return state;
+
+  const borrower = state.players[borrowerId];
+  const lender = state.players[debt.lenderId];
+
+  if (!borrower || !lender || borrower.chips < debt.amount) {
+    return state;
+  }
+
+  const updatedDebts = state.debts.map(d =>
+    d.id === debtId ? { ...d, status: 'REPAID' as const, repaidAt: Date.now() } : d
+  );
+
+  return {
+    ...state,
+    debts: updatedDebts,
+    latestRepaymentAlert: {
+      debtId,
+      lenderId: debt.lenderId,
+      borrowerName: borrower.name,
+      amount: debt.amount,
+    },
+    players: {
+      ...state.players,
+      [borrowerId]: {
+        ...borrower,
+        chips: borrower.chips - debt.amount,
+      },
+      [debt.lenderId]: {
+        ...lender,
+        chips: lender.chips + debt.amount,
+      },
+    },
+  };
+}
+
+export function clearRepaymentAlert(state: TableState): TableState {
+  return {
+    ...state,
+    latestRepaymentAlert: undefined,
   };
 }
 
@@ -197,6 +332,13 @@ export function advancePhase(state: TableState, nextPhase: TablePhase): TableSta
 
   if (nextPhase === 'BETTING') {
     nextRound += 1;
+    // Reset bet committed flag for all players
+    for (const id of Object.keys(updatedPlayers)) {
+      updatedPlayers[id] = {
+        ...updatedPlayers[id],
+        isCommitted: false,
+      };
+    }
     // Refund any remaining banker bet back to banker's chips for the new round
     const banker = updatedPlayers[state.bankerId];
     if (banker && banker.currentBet > 0) {
@@ -205,6 +347,7 @@ export function advancePhase(state: TableState, nextPhase: TablePhase): TableSta
         ...banker,
         chips: banker.chips + banker.currentBet,
         currentBet: 0,
+        isCommitted: false,
       };
     }
   }

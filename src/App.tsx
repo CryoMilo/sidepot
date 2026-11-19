@@ -4,10 +4,15 @@ import {
   createInitialTable,
   addPlayer,
   placeBet,
+  commitPlayerBet,
+  resetPlayerBet,
   resolvePlayerBet,
   rotateBanker,
   advancePhase,
   topUpPlayerChips,
+  transferTokensAsDebt,
+  repayDebt,
+  clearRepaymentAlert,
 } from './utils/gameEngine';
 import {
   createPeerInstance,
@@ -23,8 +28,9 @@ import GoldenJar from './components/GoldenJar';
 import WalletDeck from './components/WalletDeck';
 import BankerControls from './components/BankerControls';
 import RoomModal from './components/RoomModal';
+import DebtModal from './components/DebtModal';
 import SettlementModal from './components/SettlementModal';
-import { playSound } from './utils/audio';
+import { Check } from 'lucide-react';
 import Peer, { DataConnection } from 'peerjs';
 
 const CLIENT_SESSION_KEY = 'sidepot_client_session';
@@ -40,6 +46,7 @@ export default function App() {
   const [showRoomModal, setShowRoomModal] = useState<boolean>(false);
   const [roomModalMode, setRoomModalMode] = useState<'CREATE' | 'JOIN' | 'QR_SHARE'>('JOIN');
   const [showSettlementModal, setShowSettlementModal] = useState<boolean>(false);
+  const [showDebtModal, setShowDebtModal] = useState<boolean>(false);
 
   // Networking refs
   const peerRef = useRef<Peer | null>(null);
@@ -107,6 +114,31 @@ export default function App() {
               const { playerId, amount } = msg.payload;
               next = placeBet(current, playerId, amount);
               triggerJarDance();
+              break;
+            }
+            case 'COMMIT_BET': {
+              const { playerId, amount } = msg.payload;
+              next = commitPlayerBet(current, playerId, amount);
+              triggerJarDance();
+              break;
+            }
+            case 'RESET_BET': {
+              const { playerId } = msg.payload;
+              next = resetPlayerBet(current, playerId);
+              break;
+            }
+            case 'TRANSFER_DEBT': {
+              const { lenderId, borrowerId, amount } = msg.payload;
+              next = transferTokensAsDebt(current, lenderId, borrowerId, amount);
+              break;
+            }
+            case 'REPAY_DEBT': {
+              const { debtId, borrowerId } = msg.payload;
+              next = repayDebt(current, debtId, borrowerId);
+              break;
+            }
+            case 'CLEAR_REPAYMENT_ALERT': {
+              next = clearRepaymentAlert(current);
               break;
             }
             case 'RESOLVE_BET': {
@@ -288,23 +320,92 @@ export default function App() {
     setShowRoomModal(false);
   };
 
-  const handlePlaceBet = (amount: number) => {
+  const handleCommitBet = (amount: number) => {
     if (!tableState || !myPlayerId) return;
 
     if (isHost) {
       setTableState(current => {
         if (!current) return null;
-        const next = placeBet(current, myPlayerId, amount);
+        const next = commitPlayerBet(current, myPlayerId, amount);
         triggerJarDance();
         broadcastState(hostConnectionsRef.current, next);
         return next;
       });
     } else {
-      sendActionToHost(clientConnectionRef.current, 'PLACE_BET', {
+      sendActionToHost(clientConnectionRef.current, 'COMMIT_BET', {
         playerId: myPlayerId,
         amount,
       });
       triggerJarDance();
+    }
+  };
+
+  const handleResetBet = () => {
+    if (!tableState || !myPlayerId) return;
+
+    if (isHost) {
+      setTableState(current => {
+        if (!current) return null;
+        const next = resetPlayerBet(current, myPlayerId);
+        broadcastState(hostConnectionsRef.current, next);
+        return next;
+      });
+    } else {
+      sendActionToHost(clientConnectionRef.current, 'RESET_BET', {
+        playerId: myPlayerId,
+      });
+    }
+  };
+
+  const handleTransferAsDebt = (lenderId: string, borrowerId: string, amount: number) => {
+    if (!tableState) return;
+
+    if (isHost) {
+      setTableState(current => {
+        if (!current) return null;
+        const next = transferTokensAsDebt(current, lenderId, borrowerId, amount);
+        broadcastState(hostConnectionsRef.current, next);
+        return next;
+      });
+    } else {
+      sendActionToHost(clientConnectionRef.current, 'TRANSFER_DEBT', {
+        lenderId,
+        borrowerId,
+        amount,
+      });
+    }
+  };
+
+  const handleRepayDebt = (debtId: string, borrowerId: string) => {
+    if (!tableState) return;
+
+    if (isHost) {
+      setTableState(current => {
+        if (!current) return null;
+        const next = repayDebt(current, debtId, borrowerId);
+        broadcastState(hostConnectionsRef.current, next);
+        return next;
+      });
+    } else {
+      sendActionToHost(clientConnectionRef.current, 'REPAY_DEBT', {
+        debtId,
+        borrowerId,
+      });
+    }
+  };
+
+  const handleClearRepaymentAlert = () => {
+    if (!tableState) return;
+
+    if (isHost) {
+      setTableState(current => {
+        if (!current) return null;
+        const next = clearRepaymentAlert(current);
+        broadcastState(hostConnectionsRef.current, next);
+        return next;
+      });
+    } else {
+      sendActionToHost(clientConnectionRef.current, 'CLEAR_REPAYMENT_ALERT', {});
     }
   };
 
@@ -340,25 +441,6 @@ export default function App() {
       });
     } else {
       sendActionToHost(clientConnectionRef.current, 'ROTATE_BANKER', { newBankerId });
-    }
-  };
-
-  const handleTopUp = (amount: number) => {
-    if (!tableState || !myPlayerId) return;
-    playSound('clink');
-
-    if (isHost) {
-      setTableState(current => {
-        if (!current) return null;
-        const next = topUpPlayerChips(current, myPlayerId, amount);
-        broadcastState(hostConnectionsRef.current, next);
-        return next;
-      });
-    } else {
-      sendActionToHost(clientConnectionRef.current, 'TOP_UP', {
-        playerId: myPlayerId,
-        amount,
-      });
     }
   };
 
@@ -428,7 +510,7 @@ export default function App() {
           </div>
 
           {/* Banker Controls */}
-          <div className="max-h-[30vh] overflow-y-auto no-scrollbar shrink-0">
+          <div className="max-h-[28vh] overflow-y-auto no-scrollbar shrink-0">
             <BankerControls
               state={tableState}
               isCurrentPlayerBanker={isCurrentBanker}
@@ -436,18 +518,19 @@ export default function App() {
               onResolveBet={handleResolveBet}
               onRotateBanker={handleRotateBanker}
               onAdvancePhase={handleAdvancePhase}
-              onTopUpBanker={handleTopUp}
             />
           </div>
 
-          {/* Player Wallet & Draggable Chips Rack */}
+          {/* Player Wallet & Bet Deck with Reset and Commit */}
           <div className="shrink-0">
             <WalletDeck
               chips={myPlayer ? myPlayer.chips : 0}
               currentBet={myPlayer ? myPlayer.currentBet : 0}
               isBanker={isCurrentBanker}
-              onBet={handlePlaceBet}
-              onTopUp={handleTopUp}
+              isCommitted={myPlayer ? myPlayer.isCommitted : false}
+              onCommitBet={handleCommitBet}
+              onResetBet={handleResetBet}
+              onOpenDebtModal={() => setShowDebtModal(true)}
             />
           </div>
         </div>
@@ -512,6 +595,50 @@ export default function App() {
           onClose={() => setShowSettlementModal(false)}
         />
       )}
+
+      {/* Debt & Transfer Modal */}
+      {tableState && (
+        <DebtModal
+          isOpen={showDebtModal}
+          onClose={() => setShowDebtModal(false)}
+          myPlayerId={myPlayerId}
+          roomId={tableState.roomId}
+          players={tableState.players}
+          debts={tableState.debts || []}
+          onTransferAsDebt={handleTransferAsDebt}
+          onRepayDebt={handleRepayDebt}
+        />
+      )}
+
+      {/* Lender Repayment Notification Dialog */}
+      {tableState?.latestRepaymentAlert &&
+        tableState.latestRepaymentAlert.lenderId === myPlayerId && (
+          <div className="fixed inset-0 z-50 bg-black/45 backdrop-blur-sm flex items-center justify-center p-4">
+            <div className="bg-gradient-to-b from-[#FFFDF9] via-[#FFF8EA] to-[#FFF2D5] border-3 border-[#FFE4A0] rounded-[32px] max-w-xs w-full p-5 text-center shadow-2xl relative">
+              <div className="w-12 h-12 rounded-full bg-[#DCFCE7] border border-[#86EFAC] flex items-center justify-center mx-auto mb-3">
+                <Check className="w-6 h-6 text-[#16A34A]" />
+              </div>
+              <h3 className="text-base font-black text-[#78350F]">Debt Repaid!</h3>
+              <p className="text-xs font-bold text-[#92400E] mt-1 mb-4">
+                <span className="font-black text-[#16A34A]">
+                  {tableState.latestRepaymentAlert.borrowerName}
+                </span>{' '}
+                has repaid their loan of{' '}
+                <span className="font-black text-[#78350F]">
+                  {tableState.latestRepaymentAlert.amount} tokens
+                </span>
+                .
+              </p>
+              <button
+                type="button"
+                onClick={handleClearRepaymentAlert}
+                className="w-full bg-[#16A34A] hover:bg-[#15803D] text-white py-2.5 rounded-xl font-black text-xs shadow-md transition-transform active:scale-95"
+              >
+                Got It
+              </button>
+            </div>
+          </div>
+        )}
     </main>
   );
 }
