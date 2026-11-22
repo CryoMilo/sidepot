@@ -58,12 +58,12 @@ export default function RoomModal({
   };
 
   return (
-    <div className="fixed inset-0 z-50 bg-black/45 backdrop-blur-sm flex items-center justify-center p-4">
-      <div className="bg-gradient-to-b from-[#FFFDF9] via-[#FFF8EA] to-[#FFF2D5] border-3 border-[#FFE4A0] rounded-[36px] max-w-sm w-full p-6 shadow-2xl relative">
+    <div className="fixed inset-0 z-50 bg-black/70 backdrop-blur-sm flex items-center justify-center p-4">
+      <div className="bg-gradient-to-b from-[#082418] via-[#0b2f1f] to-[#05160e] border-2 border-[#D4AF37]/50 rounded-[36px] max-w-sm w-full p-6 shadow-[0_20px_50px_rgba(0,0,0,0.8)] relative text-white">
         {onClose && (
           <button
             onClick={onClose}
-            className="absolute top-5 right-5 w-8 h-8 rounded-full bg-white border border-[#FDE68A] flex items-center justify-center text-[#78350F] hover:bg-[#FEF3C7]"
+            className="absolute top-5 right-5 w-8 h-8 rounded-full bg-[#0a291c] border border-[#D4AF37]/50 flex items-center justify-center text-amber-200 hover:bg-[#12422e] hover:text-white"
           >
             <X className="w-4 h-4" />
           </button>
@@ -71,13 +71,13 @@ export default function RoomModal({
 
         {/* Tab switchers if not QR mode */}
         {initialMode !== 'QR_SHARE' && (
-          <div className="flex bg-[#FFF8E7] p-1 rounded-2xl border border-[#FDE68A] mb-5">
+          <div className="flex bg-[#051a11] p-1 rounded-2xl border border-[#D4AF37]/35 mb-5">
             <button
               onClick={() => setActiveTab('CREATE')}
               className={`flex-1 flex items-center justify-center gap-1.5 py-2 rounded-xl text-xs font-black transition-all ${
                 activeTab === 'CREATE'
-                  ? 'bg-white text-[#78350F] shadow-sm'
-                  : 'text-[#92400E] hover:text-[#78350F]'
+                  ? 'bg-gradient-to-r from-[#F59E0B] to-[#D97706] text-[#451A03] shadow-sm'
+                  : 'text-amber-200 hover:text-white'
               }`}
             >
               <PlusCircle className="w-3.5 h-3.5" />
@@ -87,8 +87,8 @@ export default function RoomModal({
               onClick={() => setActiveTab('JOIN')}
               className={`flex-1 flex items-center justify-center gap-1.5 py-2 rounded-xl text-xs font-black transition-all ${
                 activeTab === 'JOIN'
-                  ? 'bg-white text-[#78350F] shadow-sm'
-                  : 'text-[#92400E] hover:text-[#78350F]'
+                  ? 'bg-gradient-to-r from-[#F59E0B] to-[#D97706] text-[#451A03] shadow-sm'
+                  : 'text-amber-200 hover:text-white'
               }`}
             >
               <LogIn className="w-3.5 h-3.5" />
@@ -100,33 +100,33 @@ export default function RoomModal({
         {/* QR Share View */}
         {activeTab === 'QR_SHARE' ? (
           <div className="text-center py-2">
-            <h3 className="text-lg font-black text-[#78350F]">Invite Table Players</h3>
-            <p className="text-xs font-bold text-[#92400E] mt-0.5 mb-4">
+            <h3 className="text-lg font-black text-amber-100">Invite Table Players</h3>
+            <p className="text-xs font-bold text-emerald-200/70 mt-0.5 mb-4">
               Scan QR code with phone camera to join
             </p>
 
-            <div className="bg-white p-4 rounded-3xl border-2 border-[#FDE68A] shadow-inner inline-block mx-auto mb-4">
+            <div className="bg-white p-4 rounded-3xl border-2 border-[#D4AF37]/60 shadow-xl inline-block mx-auto mb-4">
               <QRCodeSVG
                 value={`${typeof window !== 'undefined' ? window.location.origin : ''}?room=${currentRoomId}`}
                 size={180}
                 level="M"
                 bgColor="#FFFFFF"
-                fgColor="#78350F"
+                fgColor="#071E15"
               />
             </div>
 
             <div className="text-center mb-4">
-              <div className="text-[11px] font-black uppercase text-[#B45309] tracking-wider">
+              <div className="text-[11px] font-black uppercase text-[#FCD34D] tracking-wider">
                 Room Code
               </div>
-              <div className="text-2xl font-black text-[#78350F] tracking-widest mt-0.5">
+              <div className="text-2xl font-black text-white tracking-widest mt-0.5">
                 {currentRoomId}
               </div>
             </div>
 
             <button
               onClick={handleCopyLink}
-              className="w-full flex items-center justify-center gap-2 bg-[#F59E0B] hover:bg-[#D97706] text-white py-2.5 rounded-2xl font-black text-xs shadow-sm transition-transform active:scale-95"
+              className="w-full flex items-center justify-center gap-2 bg-gradient-to-r from-[#F59E0B] via-[#EAB308] to-[#D97706] hover:brightness-110 text-[#451A03] py-2.5 rounded-2xl font-black text-xs shadow-md transition-transform active:scale-95"
             >
               {copied ? <Check className="w-4 h-4" /> : <Copy className="w-4 h-4" />}
               <span>{copied ? 'Link Copied!' : 'Copy Share Link'}</span>
@@ -135,7 +135,7 @@ export default function RoomModal({
         ) : (
           <form onSubmit={handleSubmit} className="space-y-4">
             <div>
-              <label className="block text-xs font-black text-[#78350F] mb-1">
+              <label className="block text-xs font-black text-amber-200 mb-1">
                 Your Nickname
               </label>
               <input
@@ -144,18 +144,18 @@ export default function RoomModal({
                 value={name}
                 onChange={e => setName(e.target.value)}
                 placeholder="e.g. Ko Aung"
-                className="w-full bg-white border border-[#FCD34D] rounded-2xl px-3.5 py-2.5 text-sm font-bold text-[#422006] placeholder-[#C2410C]/40 focus:outline-none focus:ring-2 focus:ring-[#F59E0B]"
+                className="w-full bg-[#051a11] border border-[#D4AF37]/50 rounded-2xl px-3.5 py-2.5 text-sm font-bold text-white placeholder-emerald-200/40 focus:outline-none focus:ring-2 focus:ring-[#F59E0B]"
               />
             </div>
 
             <div>
               <div className="flex items-center justify-between mb-1">
-                <label className="text-xs font-black text-[#78350F]">Room Code (4-chars)</label>
+                <label className="text-xs font-black text-amber-200">Room Code (4-chars)</label>
                 {activeTab === 'CREATE' && (
                   <button
                     type="button"
                     onClick={generateRandomCode}
-                    className="text-[10px] font-black text-[#B45309] hover:underline"
+                    className="text-[10px] font-black text-[#FDE047] hover:underline"
                   >
                     Generate Random
                   </button>
@@ -168,13 +168,13 @@ export default function RoomModal({
                 value={roomCode}
                 onChange={e => setRoomCode(e.target.value.toUpperCase())}
                 placeholder="e.g. 7K92"
-                className="w-full bg-white border border-[#FCD34D] rounded-2xl px-3.5 py-2.5 text-sm font-black text-[#422006] tracking-widest placeholder-[#C2410C]/40 uppercase focus:outline-none focus:ring-2 focus:ring-[#F59E0B]"
+                className="w-full bg-[#051a11] border border-[#D4AF37]/50 rounded-2xl px-3.5 py-2.5 text-sm font-black text-white tracking-widest placeholder-emerald-200/40 uppercase focus:outline-none focus:ring-2 focus:ring-[#F59E0B]"
               />
             </div>
 
             {activeTab === 'CREATE' && (
               <div>
-                <label className="block text-xs font-black text-[#78350F] mb-1">
+                <label className="block text-xs font-black text-amber-200 mb-1">
                   Starting Token Buy-In
                 </label>
                 <div className="grid grid-cols-3 gap-2">
@@ -185,8 +185,8 @@ export default function RoomModal({
                       onClick={() => setBuyIn(amt)}
                       className={`py-2 rounded-xl text-xs font-black border transition-all ${
                         buyIn === amt
-                          ? 'bg-[#F59E0B] text-white border-[#D97706] shadow-sm'
-                          : 'bg-white text-[#92400E] border-[#FCD34D] hover:bg-[#FEF3C7]'
+                          ? 'bg-gradient-to-r from-[#F59E0B] to-[#D97706] text-[#451A03] border-[#FCD34D] shadow-sm'
+                          : 'bg-[#061c13] text-amber-200 border-[#D4AF37]/40 hover:bg-[#0a291c]'
                       }`}
                     >
                       {amt} Tokens
@@ -198,7 +198,7 @@ export default function RoomModal({
 
             <button
               type="submit"
-              className="w-full mt-2 flex items-center justify-center gap-2 bg-[#F59E0B] hover:bg-[#D97706] text-white py-3 rounded-2xl font-black text-sm shadow-md transition-transform active:scale-95"
+              className="w-full mt-2 flex items-center justify-center gap-2 bg-gradient-to-r from-[#F59E0B] via-[#EAB308] to-[#D97706] hover:brightness-110 text-[#451A03] py-3 rounded-2xl font-black text-sm shadow-md transition-transform active:scale-95"
             >
               <Users className="w-4 h-4" />
               <span>{activeTab === 'CREATE' ? 'Start Game Night' : 'Join Table'}</span>

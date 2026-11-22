@@ -68,37 +68,37 @@ export default function DebtModal({
   };
 
   return (
-    <div className="fixed inset-0 z-50 bg-black/45 backdrop-blur-sm flex items-center justify-center p-3 sm:p-4">
-      <div className="bg-gradient-to-b from-[#FFFDF9] via-[#FFF8EA] to-[#FFF2D5] border-3 border-[#FFE4A0] rounded-[32px] max-w-sm w-full p-4 sm:p-5 shadow-2xl relative flex flex-col max-h-[85vh]">
+    <div className="fixed inset-0 z-50 bg-black/70 backdrop-blur-sm flex items-center justify-center p-3 sm:p-4">
+      <div className="bg-gradient-to-b from-[#082418] via-[#0b2f1f] to-[#05160e] border-2 border-[#D4AF37]/50 rounded-[32px] max-w-sm w-full p-4 sm:p-5 shadow-[0_20px_50px_rgba(0,0,0,0.8)] relative flex flex-col max-h-[85vh] text-white">
         {/* Close Button */}
         <button
           onClick={onClose}
-          className="absolute top-4 right-4 w-7 h-7 rounded-full bg-white border border-[#FDE68A] flex items-center justify-center text-[#78350F] hover:bg-[#FEF3C7]"
+          className="absolute top-4 right-4 w-7 h-7 rounded-full bg-[#0a291c] border border-[#D4AF37]/50 flex items-center justify-center text-amber-200 hover:bg-[#12422e] hover:text-white"
         >
           <X className="w-4 h-4" />
         </button>
 
         {/* Modal Header */}
         <div className="flex items-center gap-2 mb-3">
-          <div className="w-8 h-8 rounded-full bg-[#FEF3C7] border border-[#FCD34D] flex items-center justify-center">
-            <ArrowRightLeft className="w-4 h-4 text-[#B45309]" />
+          <div className="w-8 h-8 rounded-full bg-[#051a11] border border-[#D4AF37]/60 flex items-center justify-center">
+            <ArrowRightLeft className="w-4 h-4 text-[#F59E0B]" />
           </div>
           <div>
-            <h3 className="text-sm font-black text-[#78350F]">Peer Token Loans</h3>
-            <p className="text-[10px] font-bold text-[#92400E]">
+            <h3 className="text-sm font-black text-amber-100">Peer Token Loans</h3>
+            <p className="text-[10px] font-bold text-emerald-200/70">
               Zero-interest peer loans with automatic ledger tracking
             </p>
           </div>
         </div>
 
         {/* Tab Buttons */}
-        <div className="flex bg-[#FFF8E7] p-1 rounded-2xl border border-[#FDE68A] mb-3 shrink-0">
+        <div className="flex bg-[#051a11] p-1 rounded-2xl border border-[#D4AF37]/35 mb-3 shrink-0">
           <button
             onClick={() => setActiveTab('TRANSFER')}
             className={`flex-1 flex items-center justify-center gap-1.5 py-1.5 rounded-xl text-xs font-black transition-all ${
               activeTab === 'TRANSFER'
-                ? 'bg-white text-[#78350F] shadow-sm'
-                : 'text-[#92400E] hover:text-[#78350F]'
+                ? 'bg-gradient-to-r from-[#F59E0B] to-[#D97706] text-[#451A03] shadow-sm'
+                : 'text-amber-200 hover:text-white'
             }`}
           >
             <HandCoins className="w-3.5 h-3.5" />
@@ -108,8 +108,8 @@ export default function DebtModal({
             onClick={() => setActiveTab('DEBTS')}
             className={`flex-1 flex items-center justify-center gap-1.5 py-1.5 rounded-xl text-xs font-black transition-all ${
               activeTab === 'DEBTS'
-                ? 'bg-white text-[#78350F] shadow-sm'
-                : 'text-[#92400E] hover:text-[#78350F]'
+                ? 'bg-gradient-to-r from-[#F59E0B] to-[#D97706] text-[#451A03] shadow-sm'
+                : 'text-amber-200 hover:text-white'
             }`}
           >
             <Coins className="w-3.5 h-3.5" />
@@ -122,7 +122,7 @@ export default function DebtModal({
           <div className="space-y-3 overflow-y-auto no-scrollbar flex-1 pr-0.5">
             {/* Player Selection */}
             <div>
-              <label className="block text-[11px] font-black text-[#78350F] mb-1">
+              <label className="block text-[11px] font-black text-amber-200 mb-1">
                 Select Player to Lend Tokens
               </label>
               {otherPlayers.length > 0 ? (
@@ -134,17 +134,17 @@ export default function DebtModal({
                       onClick={() => setSelectedBorrowerId(p.id)}
                       className={`p-2 rounded-xl border text-left flex items-center gap-2 transition-all ${
                         targetBorrowerId === p.id
-                          ? 'bg-[#FEF3C7] border-[#F59E0B] shadow-sm'
-                          : 'bg-white border-[#FDE68A] hover:bg-[#FFFDF9]'
+                          ? 'bg-[#0f3827] border-[#D4AF37] shadow-sm'
+                          : 'bg-[#061c13] border-[#D4AF37]/35 hover:bg-[#0a291c]'
                       }`}
                     >
                       <div
-                        className="w-3.5 h-3.5 rounded-full shrink-0"
+                        className="w-3.5 h-3.5 rounded-full shrink-0 border border-black/40"
                         style={{ backgroundColor: p.avatarColor }}
                       />
                       <div className="truncate">
-                        <div className="text-xs font-black text-[#422006] truncate">{p.name}</div>
-                        <div className="text-[10px] font-bold text-[#92400E]">
+                        <div className="text-xs font-black text-white truncate">{p.name}</div>
+                        <div className="text-[10px] font-bold text-[#FDE047]">
                           {p.chips} tokens
                         </div>
                       </div>
@@ -152,7 +152,7 @@ export default function DebtModal({
                   ))}
                 </div>
               ) : (
-                <div className="bg-white/70 p-3 rounded-xl border border-[#FDE68A] text-center text-xs font-bold text-[#92400E]">
+                <div className="bg-[#051a11] p-3 rounded-xl border border-[#D4AF37]/35 text-center text-xs font-bold text-amber-200">
                   Waiting for other players to join the table...
                 </div>
               )}
@@ -161,8 +161,8 @@ export default function DebtModal({
             {/* Amount Selection */}
             <div>
               <div className="flex items-center justify-between mb-1">
-                <label className="text-[11px] font-black text-[#78350F]">Amount to Lend</label>
-                <span className="text-[10px] font-bold text-[#92400E]">
+                <label className="text-[11px] font-black text-amber-200">Amount to Lend</label>
+                <span className="text-[10px] font-bold text-[#FDE047]">
                   Available: {myChips} tokens
                 </span>
               </div>
@@ -175,8 +175,8 @@ export default function DebtModal({
                     onClick={() => setTransferAmount(amt)}
                     className={`py-1.5 rounded-xl text-xs font-black border transition-all ${
                       transferAmount === amt
-                        ? 'bg-[#F59E0B] text-white border-[#D97706]'
-                        : 'bg-white text-[#92400E] border-[#FCD34D] disabled:opacity-40'
+                        ? 'bg-gradient-to-r from-[#F59E0B] to-[#D97706] text-[#451A03] border-[#FCD34D]'
+                        : 'bg-[#061c13] text-amber-200 border-[#D4AF37]/40 disabled:opacity-30'
                     }`}
                   >
                     {amt}
@@ -189,7 +189,7 @@ export default function DebtModal({
                 max={myChips}
                 value={transferAmount}
                 onChange={e => setTransferAmount(parseInt(e.target.value, 10) || 1)}
-                className="w-full bg-white border border-[#FCD34D] rounded-xl px-3 py-1.5 text-xs font-black text-[#422006] focus:outline-none focus:ring-2 focus:ring-[#F59E0B]"
+                className="w-full bg-[#051a11] border border-[#D4AF37]/50 rounded-xl px-3 py-1.5 text-xs font-black text-white focus:outline-none focus:ring-2 focus:ring-[#F59E0B]"
               />
             </div>
 
@@ -198,7 +198,7 @@ export default function DebtModal({
               type="button"
               disabled={!targetBorrowerId || transferAmount <= 0 || transferAmount > myChips}
               onClick={handleTransfer}
-              className="w-full bg-[#F59E0B] hover:bg-[#D97706] disabled:opacity-40 text-white font-black text-xs py-2.5 rounded-xl shadow-sm transition-transform active:scale-95 flex items-center justify-center gap-1.5 mt-2"
+              className="w-full bg-gradient-to-r from-[#F59E0B] via-[#EAB308] to-[#D97706] hover:brightness-110 disabled:opacity-35 text-[#451A03] font-black text-xs py-2.5 rounded-xl shadow-md transition-transform active:scale-95 flex items-center justify-center gap-1.5 mt-2"
             >
               <HandCoins className="w-4 h-4" />
               <span>Transfer {transferAmount} Tokens as Debt</span>
@@ -211,15 +211,15 @@ export default function DebtModal({
           <div className="space-y-3 overflow-y-auto no-scrollbar flex-1 pr-0.5">
             {/* Debts I Owe */}
             <div>
-              <div className="text-[11px] font-black uppercase text-[#92400E] tracking-wider mb-1.5">
+              <div className="text-[11px] font-black uppercase text-[#FCD34D] tracking-wider mb-1.5">
                 Debts You Owe ({myUnpaidDebts.length})
               </div>
 
               {myUnpaidDebts.length === 0 ? (
-                <div className="bg-white/80 rounded-xl p-3 text-center border border-[#FDE68A]">
-                  <CheckCircle2 className="w-5 h-5 text-[#16A34A] mx-auto mb-1" />
-                  <div className="text-xs font-black text-[#78350F]">No Unpaid Debts</div>
-                  <p className="text-[10px] text-[#92400E] mt-0.5">You are debt-free!</p>
+                <div className="bg-[#051a11]/90 rounded-xl p-3 text-center border border-[#D4AF37]/35">
+                  <CheckCircle2 className="w-5 h-5 text-[#34D399] mx-auto mb-1" />
+                  <div className="text-xs font-black text-amber-100">No Unpaid Debts</div>
+                  <p className="text-[10px] text-emerald-200/70 mt-0.5">You are debt-free!</p>
                 </div>
               ) : (
                 <div className="space-y-1.5">
@@ -228,13 +228,13 @@ export default function DebtModal({
                     return (
                       <div
                         key={d.id}
-                        className="bg-white rounded-xl p-2.5 border border-[#FDE68A] shadow-sm flex items-center justify-between gap-2"
+                        className="bg-[#061c13] rounded-xl p-2.5 border border-[#D4AF37]/35 shadow-sm flex items-center justify-between gap-2"
                       >
                         <div>
-                          <div className="text-xs font-black text-[#422006]">
+                          <div className="text-xs font-black text-white">
                             Owe {d.lenderName}
                           </div>
-                          <div className="text-[10px] font-extrabold text-[#D97706]">
+                          <div className="text-[10px] font-extrabold text-[#FDE047]">
                             {d.amount} Tokens
                           </div>
                         </div>
@@ -243,7 +243,7 @@ export default function DebtModal({
                           type="button"
                           disabled={!canAfford}
                           onClick={() => handleRepay(d.id, d.amount)}
-                          className="bg-[#16A34A] hover:bg-[#15803D] disabled:opacity-40 text-white font-black text-xs px-3 py-1.5 rounded-lg shadow-sm flex items-center gap-1 transition-transform active:scale-95"
+                          className="bg-[#059669] hover:bg-[#047857] disabled:opacity-35 text-white font-black text-xs px-3 py-1.5 rounded-lg shadow-sm flex items-center gap-1 transition-transform active:scale-95"
                         >
                           <RotateCcw className="w-3 h-3" />
                           <span>Repay</span>
@@ -256,13 +256,13 @@ export default function DebtModal({
             </div>
 
             {/* Debts Owed to Me */}
-            <div className="pt-2 border-t border-[#FDE68A]/60">
-              <div className="text-[11px] font-black uppercase text-[#92400E] tracking-wider mb-1.5">
+            <div className="pt-2 border-t border-[#D4AF37]/30">
+              <div className="text-[11px] font-black uppercase text-[#FCD34D] tracking-wider mb-1.5">
                 Debts Owed To You ({debtsOwedToMe.filter(d => d.status === 'UNPAID').length})
               </div>
 
               {debtsOwedToMe.length === 0 ? (
-                <div className="text-[10px] text-[#92400E] italic text-center py-1">
+                <div className="text-[10px] text-emerald-200/60 italic text-center py-1">
                   You haven't lent tokens to anyone yet.
                 </div>
               ) : (
@@ -270,20 +270,20 @@ export default function DebtModal({
                   {debtsOwedToMe.map(d => (
                     <div
                       key={d.id}
-                      className="bg-white/80 rounded-xl px-2.5 py-1.5 border border-[#FDE68A] flex items-center justify-between text-xs"
+                      className="bg-[#051a11] rounded-xl px-2.5 py-1.5 border border-[#D4AF37]/30 flex items-center justify-between text-xs"
                     >
                       <div className="flex items-center gap-1.5">
-                        <Users className="w-3 h-3 text-[#92400E]" />
-                        <span className="font-bold text-[#422006]">{d.borrowerName}</span>
+                        <Users className="w-3 h-3 text-[#F59E0B]" />
+                        <span className="font-bold text-white">{d.borrowerName}</span>
                       </div>
                       <div className="flex items-center gap-2">
-                        <span className="font-black text-[#78350F]">{d.amount} tkn</span>
+                        <span className="font-black text-[#FDE047]">{d.amount} tkn</span>
                         {d.status === 'REPAID' ? (
-                          <span className="text-[9px] font-extrabold text-[#16A34A] bg-[#DCFCE7] px-1.5 py-0.5 rounded">
+                          <span className="text-[9px] font-extrabold text-[#34D399] bg-[#064E3B] px-1.5 py-0.5 rounded border border-[#059669]/60">
                             Repaid
                           </span>
                         ) : (
-                          <span className="text-[9px] font-extrabold text-[#D97706] bg-[#FEF3C7] px-1.5 py-0.5 rounded flex items-center gap-0.5">
+                          <span className="text-[9px] font-extrabold text-[#FDE047] bg-[#78350F]/70 px-1.5 py-0.5 rounded flex items-center gap-0.5 border border-[#F59E0B]/50">
                             <Clock className="w-2.5 h-2.5" />
                             <span>Unpaid</span>
                           </span>

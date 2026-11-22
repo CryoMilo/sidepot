@@ -486,7 +486,7 @@ export default function App() {
   const isCurrentBanker = myPlayer ? myPlayer.isBanker : false;
 
   return (
-    <main className="fixed inset-0 h-[100dvh] max-h-[100dvh] w-screen overflow-hidden select-none touch-none bg-gradient-to-b from-[#FFFDF9] via-[#FFF8EA] to-[#FFF2D5] safe-area-container sm:p-4 flex flex-col justify-between">
+    <main className="fixed inset-0 h-[100dvh] max-h-[100dvh] w-screen overflow-hidden select-none touch-none casino-felt-bg safe-area-container sm:p-4 flex flex-col justify-between text-[#F8FAFC]">
       {/* Table Active State */}
       {tableState ? (
         <div className="w-full max-w-md mx-auto flex flex-col justify-between h-full gap-2 overflow-hidden">
@@ -543,12 +543,12 @@ export default function App() {
       ) : (
         /* Empty Welcome Stage */
         <div className="flex-1 flex flex-col items-center justify-center max-w-md mx-auto text-center px-4">
-          <div className="w-20 h-20 rounded-3xl bg-[#FEF3C7] border-2 border-[#FCD34D] flex items-center justify-center mx-auto mb-4 shadow-md">
+          <div className="w-20 h-20 rounded-3xl bg-[#082418] border-2 border-[#D4AF37]/70 flex items-center justify-center mx-auto mb-4 shadow-[0_0_35px_rgba(212,175,55,0.25)]">
             <svg
               className="w-10 h-10"
               viewBox="0 0 24 24"
               fill="none"
-              stroke="#B45309"
+              stroke="#F59E0B"
               strokeWidth="2.5"
               strokeLinecap="round"
               strokeLinejoin="round"
@@ -558,8 +558,8 @@ export default function App() {
               <circle cx="12" cy="14" r="2" />
             </svg>
           </div>
-          <h1 className="text-3xl font-black text-[#78350F] tracking-tight">SidePot</h1>
-          <p className="text-sm font-bold text-[#92400E] mt-1 max-w-xs">
+          <h1 className="text-3xl font-black text-amber-100 tracking-tight drop-shadow-[0_2px_10px_rgba(245,158,11,0.3)]">SidePot</h1>
+          <p className="text-sm font-bold text-emerald-200/80 mt-1 max-w-xs">
             Real-time digital chip ledger for Shan Koe Mee, Poker & card nights.
           </p>
           <button
@@ -567,7 +567,7 @@ export default function App() {
               setRoomModalMode('CREATE');
               setShowRoomModal(true);
             }}
-            className="mt-6 w-full bg-[#F59E0B] hover:bg-[#D97706] text-white py-3.5 rounded-2xl font-black text-sm shadow-md transition-transform active:scale-95"
+            className="mt-6 w-full bg-gradient-to-r from-[#F59E0B] via-[#EAB308] to-[#D97706] hover:brightness-110 text-[#451A03] py-3.5 rounded-2xl font-black text-sm shadow-[0_4px_20px_rgba(245,158,11,0.35)] transition-transform active:scale-95"
           >
             Create New Game Table
           </button>
@@ -576,7 +576,7 @@ export default function App() {
               setRoomModalMode('JOIN');
               setShowRoomModal(true);
             }}
-            className="mt-2.5 w-full bg-white hover:bg-[#FEF3C7] text-[#92400E] border-2 border-[#FCD34D] py-3.5 rounded-2xl font-black text-sm shadow-sm transition-transform active:scale-95"
+            className="mt-2.5 w-full bg-[#0a291c] hover:bg-[#12422e] text-[#FDE047] border-2 border-[#D4AF37]/50 py-3.5 rounded-2xl font-black text-sm shadow-sm transition-transform active:scale-95"
           >
             Join Existing Table
           </button>

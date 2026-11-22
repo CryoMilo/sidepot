@@ -23,13 +23,13 @@ export default function Header({
     <header className="flex items-center justify-between w-full max-w-md mx-auto py-1 px-1 mb-1">
       {/* Brand & Room Info */}
       <div className="flex items-center gap-2">
-        <div className="flex items-center gap-1.5 bg-white px-3 py-1.5 rounded-full border border-[#FDE68A] shadow-sm">
+        <div className="flex items-center gap-1.5 bg-[#0a291c]/90 px-3 py-1.5 rounded-full border border-[#D4AF37]/50 shadow-md backdrop-blur-sm">
           {/* Custom SVG Vault / Jar Icon */}
           <svg
             className="w-4 h-4"
             viewBox="0 0 24 24"
             fill="none"
-            stroke="#B45309"
+            stroke="#F59E0B"
             strokeWidth="2.5"
             strokeLinecap="round"
             strokeLinejoin="round"
@@ -38,8 +38,8 @@ export default function Header({
             <line x1="4" y1="7" x2="20" y2="7" />
             <circle cx="12" cy="14" r="2" />
           </svg>
-          <span className="text-sm font-black text-[#78350F] tracking-tight">SidePot</span>
-          <span className="text-[10px] font-black bg-[#FEF3C7] text-[#92400E] px-1.5 py-0.5 rounded border border-[#FCD34D]">
+          <span className="text-sm font-black text-amber-100 tracking-tight">SidePot</span>
+          <span className="text-[10px] font-black bg-[#061c13] text-[#FDE047] px-1.5 py-0.5 rounded border border-[#F59E0B]/50">
             #{roomId}
           </span>
         </div>
@@ -51,8 +51,8 @@ export default function Header({
           title={isConnected ? 'P2P Connected' : 'Disconnected — click to reconnect'}
           className={`flex items-center gap-1 text-[10px] font-bold px-2 py-1 rounded-full border transition-all ${
             isConnected
-              ? 'bg-[#ECFDF5] text-[#059669] border-[#A7F3D0] cursor-default'
-              : 'bg-[#FEF2F2] text-[#DC2626] border-[#FECACA] hover:bg-[#FEE2E2] active:scale-95 cursor-pointer'
+              ? 'bg-[#064E3B]/80 text-[#34D399] border-[#059669]/60 cursor-default'
+              : 'bg-[#7F1D1D]/80 text-[#FCA5A5] border-[#DC2626]/60 hover:bg-[#991B1B] active:scale-95 cursor-pointer'
           }`}
         >
           {isConnected ? (
@@ -69,15 +69,15 @@ export default function Header({
       {/* Right Controls */}
       <div className="flex items-center gap-1.5">
         {/* Dealer Identity (Visible to all players on mobile & desktop) */}
-        <div className="flex items-center gap-1.5 text-[11px] font-bold text-[#92400E] bg-[#FFFBEB] px-2.5 py-1 rounded-full border border-[#FDE68A] shadow-xs">
-          <Crown className="w-3.5 h-3.5 text-[#D97706] shrink-0" />
+        <div className="flex items-center gap-1.5 text-[11px] font-bold text-amber-200 bg-[#0c3323]/90 px-2.5 py-1 rounded-full border border-[#D4AF37]/50 shadow-xs">
+          <Crown className="w-3.5 h-3.5 text-[#F59E0B] shrink-0" />
           <span className="max-w-[70px] xs:max-w-[100px] truncate font-extrabold">{bankerName}</span>
         </div>
 
         <button
           onClick={onOpenQr}
           title="Show Room QR Code"
-          className="w-8 h-8 rounded-full bg-white border border-[#FDE68A] flex items-center justify-center text-[#78350F] hover:bg-[#FEF3C7] shadow-sm transition-transform active:scale-95"
+          className="w-8 h-8 rounded-full bg-[#0a291c]/90 border border-[#D4AF37]/50 flex items-center justify-center text-amber-200 hover:bg-[#12422e] hover:text-white shadow-sm transition-transform active:scale-95"
         >
           <QrCode className="w-4 h-4" />
         </button>
@@ -85,7 +85,7 @@ export default function Header({
         <button
           onClick={onOpenSettlement}
           title="End of Night Settlement"
-          className="w-8 h-8 rounded-full bg-white border border-[#FDE68A] flex items-center justify-center text-[#78350F] hover:bg-[#FEF3C7] shadow-sm transition-transform active:scale-95"
+          className="w-8 h-8 rounded-full bg-[#0a291c]/90 border border-[#D4AF37]/50 flex items-center justify-center text-amber-200 hover:bg-[#12422e] hover:text-white shadow-sm transition-transform active:scale-95"
         >
           <FileText className="w-4 h-4" />
         </button>
@@ -93,7 +93,7 @@ export default function Header({
         <button
           onClick={onLeaveRoom}
           title="Leave Table"
-          className="w-8 h-8 rounded-full bg-white border border-[#FECACA] flex items-center justify-center text-[#DC2626] hover:bg-[#FEE2E2] shadow-sm transition-transform active:scale-95"
+          className="w-8 h-8 rounded-full bg-[#3B0707] border border-[#EF4444]/50 flex items-center justify-center text-[#FCA5A5] hover:bg-[#5C0A0A] shadow-sm transition-transform active:scale-95"
         >
           <LogOut className="w-3.5 h-3.5" />
         </button>

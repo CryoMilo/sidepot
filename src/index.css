@@ -25,6 +25,11 @@ html, body, #root {
   padding-right: max(10px, env(safe-area-inset-right, 10px));
 }
 
+/* Luxury Casino Table Felt Vignette & Spotlight */
+.casino-felt-bg {
+  background: radial-gradient(ellipse at 50% 18%, #154530 0%, #0b2a1d 50%, #05160e 100%);
+}
+
 /* Hide scrollbar for Chrome, Safari and Opera */
 .no-scrollbar::-webkit-scrollbar {
   display: none;

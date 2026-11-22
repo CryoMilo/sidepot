@@ -23,7 +23,7 @@ export default function GoldenJar({
   const mood = getJarMood(playerChips);
 
   return (
-    <div className="w-full max-w-md mx-auto flex flex-row sm:flex-col items-center justify-between sm:justify-center px-3.5 py-1.5 sm:px-0 sm:py-2 bg-gradient-to-r from-[#FFFDF9] via-[#FFF9ED] to-[#FFF3D6] sm:bg-none sm:bg-transparent rounded-2xl sm:rounded-none border-2 border-[#FDE68A] sm:border-0 shadow-sm sm:shadow-none select-none shrink-0 transition-all">
+    <div className="w-full max-w-md mx-auto flex flex-row sm:flex-col items-center justify-between sm:justify-center px-3.5 py-1.5 sm:px-0 sm:py-2 bg-gradient-to-r from-[#072418] via-[#0C3523] to-[#072418] sm:bg-none sm:bg-transparent rounded-2xl sm:rounded-none border-2 border-[#D4AF37]/50 sm:border-0 shadow-lg sm:shadow-none select-none shrink-0 transition-all">
       {/* Cute Fluffy Golden Pot: Compact on mobile row, grand hero on sm+ */}
       <motion.div
         className="relative cursor-pointer shrink-0 flex items-center justify-center"
@@ -184,11 +184,11 @@ export default function GoldenJar({
 
       {/* "Your Pot" Label & Token Count: Right-aligned on mobile row, centered on sm+ */}
       <div className="text-right sm:text-center shrink-0 sm:mt-2">
-        <span className="text-[10px] sm:text-[11px] font-black uppercase tracking-wider text-[#B45309] bg-[#FEF3C7] px-2 sm:px-2.5 py-0.5 rounded-full border border-[#FCD34D]">
+        <span className="text-[10px] sm:text-[11px] font-black uppercase tracking-wider text-[#FDE047] bg-[#B45309]/30 px-2 sm:px-2.5 py-0.5 rounded-full border border-[#F59E0B]/50 shadow-xs">
           Your Pot
         </span>
-        <div className="text-xl sm:text-3xl md:text-4xl font-black tracking-tight text-[#78350F] leading-tight mt-0.5">
-          {playerChips.toLocaleString()} <span className="text-xs sm:text-sm font-bold text-[#92400E]">tokens</span>
+        <div className="text-xl sm:text-3xl md:text-4xl font-black tracking-tight text-white leading-tight mt-0.5 drop-shadow-[0_2px_8px_rgba(245,158,11,0.25)]">
+          {playerChips.toLocaleString()} <span className="text-xs sm:text-sm font-bold text-[#FCD34D]">tokens</span>
         </div>
       </div>
     </div>
