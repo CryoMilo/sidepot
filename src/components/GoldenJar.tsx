@@ -13,17 +13,19 @@ interface GoldenJarProps {
   potTotal?: number;
   isDancing?: boolean;
   onClick?: () => void;
+  onOpenTopUp?: () => void;
 }
 
 export default function GoldenJar({
   playerChips,
   isDancing = false,
   onClick,
+  onOpenTopUp,
 }: GoldenJarProps) {
   const mood = getJarMood(playerChips);
 
   return (
-    <div className="w-full max-w-md mx-auto flex flex-row items-center justify-between px-3.5 py-1.5 bg-gradient-to-r from-[#072418] via-[#0C3523] to-[#072418] rounded-2xl border-2 border-[#D4AF37]/50 shadow-lg select-none shrink-0 transition-all">
+    <div className="w-full max-w-md mx-auto flex flex-row items-center justify-between px-3.5 py-1.5 bg-gradient-to-r from-[#240409] via-[#35070E] to-[#240409] rounded-2xl border-2 border-[#D4AF37]/50 shadow-lg select-none shrink-0 transition-all">
       {/* Golden Jar Mascot Icon: Compact horizontal row for all screens */}
       <motion.div
         className="relative cursor-pointer shrink-0 flex items-center justify-center"
@@ -182,15 +184,37 @@ export default function GoldenJar({
         </svg>
       </motion.div>
 
-      {/* "YOUR TOKENS" Label & Token Count: Compact row layout */}
-      <div className="text-right shrink-0">
-        <span className="text-[10px] font-black uppercase tracking-wider text-[#FDE047] bg-[#B45309]/30 px-2 py-0.5 rounded-full border border-[#F59E0B]/50 shadow-xs">
-          Your Tokens
-        </span>
-        <div className="text-xl sm:text-2xl font-black tracking-tight text-white leading-tight mt-0.5 drop-shadow-[0_2px_8px_rgba(245,158,11,0.25)]">
-          {playerChips.toLocaleString()} <span className="text-xs font-bold text-[#FCD34D]">tokens</span>
+      {/* "YOUR TOKENS" Label & Token Count or 0 Tokens Reminder */}
+      {playerChips <= 0 ? (
+        <div className="flex items-center gap-2 shrink-0">
+          <div className="text-right">
+            <span className="text-[10px] font-black uppercase tracking-wider text-rose-300 bg-rose-950/80 px-2 py-0.5 rounded-full border border-rose-600/50 shadow-xs block">
+              You are out of tokens
+            </span>
+            <span className="text-[10px] font-bold text-amber-200/70 mt-0.5 block">
+              Top up to place bets
+            </span>
+          </div>
+          {onOpenTopUp && (
+            <button
+              type="button"
+              onClick={onOpenTopUp}
+              className="bg-gradient-to-r from-[#F59E0B] via-[#EAB308] to-[#D97706] hover:brightness-110 text-[#451A03] font-black text-xs px-2.5 py-1.5 rounded-xl shadow-md transition-all active:scale-95 flex items-center gap-1 cursor-pointer shrink-0"
+            >
+              <span>+ Top Up</span>
+            </button>
+          )}
         </div>
-      </div>
+      ) : (
+        <div className="text-right shrink-0">
+          <span className="text-[10px] font-black uppercase tracking-wider text-[#FDE047] bg-[#B45309]/30 px-2 py-0.5 rounded-full border border-[#F59E0B]/50 shadow-xs">
+            Your Tokens
+          </span>
+          <div className="text-xl sm:text-2xl font-black tracking-tight text-white leading-tight mt-0.5 drop-shadow-[0_2px_8px_rgba(245,158,11,0.25)]">
+            {playerChips.toLocaleString()} <span className="text-xs font-bold text-[#FCD34D]">tokens</span>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

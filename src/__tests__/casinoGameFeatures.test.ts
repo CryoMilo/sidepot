@@ -29,31 +29,37 @@ describe('Casino & Shan Koe Mee Game Engine Features', () => {
     expect(code).not.toMatch(/[01OI]/);
   });
 
-  it('creates room with host as banker, bankroll, THB rate, and dealer rotation settings', () => {
-    const table = createInitialTable('7K9X2', 'Aung Aung', 200, 15, undefined, 4);
+  it('creates room with host as banker, THB rate, and dealer rotation settings (starts with 0 chips and 0 bank)', () => {
+    let table = createInitialTable('7K9X2', 'Aung Aung', 0, 15, undefined, 4);
 
     expect(table.roomId).toBe('7K9X2');
     expect(table.thbPerToken).toBe(15);
     expect(table.dealerRotationFrequency).toBe(4);
-    expect(table.dealerBank).toBe(200);
+    expect(table.dealerBank).toBe(0);
     expect(table.dealerRoundsPlayed).toBe(0);
     expect(table.roundNumber).toBe(1);
 
     const host = table.players[table.hostId];
     expect(host.name).toBe('Aung Aung');
     expect(host.isBanker).toBe(true);
-    expect(host.chips).toBe(200);
+    expect(host.chips).toBe(0);
     expect(host.avatarIcon).toBeDefined();
 
     expect(table.logs).toHaveLength(1);
+    expect(table.logs[0].type).toBe('DEALER_ROTATED');
+
+    // Host allocates starting bankroll via popup (backed by real bank account)
+    table = setDealerBank(table, 200);
+    expect(table.dealerBank).toBe(200);
     expect(table.logs[0].type).toBe('DEALER_BANK_SET');
+    expect(verifyZeroSum(table).balanced).toBe(true);
   });
 
   it('handles player token requests (Top-Up) and Host approval', () => {
     let table = createInitialTable('7K9X2', 'Host', 0, 10);
     table = addPlayer(table, 'p1', 'Player One');
 
-    // Player starts with 0 chips (or defaultBuyIn if 0)
+    // Player starts with 0 chips
     expect(table.players['p1'].chips).toBe(0);
 
     // Player requests 50 tokens (฿500 THB)
@@ -127,7 +133,8 @@ describe('Casino & Shan Koe Mee Game Engine Features', () => {
   });
 
   it('enforces dealer bank payout ceiling check', () => {
-    let table = createInitialTable('7K9X2', 'Host', 50, 10); // Dealer bank holds 50 tokens
+    let table = createInitialTable('7K9X2', 'Host', 0, 10);
+    table = setDealerBank(table, 50); // Dealer bank holds 50 tokens
     table = addPlayer(table, 'p1', 'Player One');
     table = requestTopUp(table, 'p1', 50, 'TOPUP');
     table = approveTopUp(table, table.topUpRequests[0].id);
@@ -159,10 +166,8 @@ describe('Casino & Shan Koe Mee Game Engine Features', () => {
     expect(table.dealerBank).toBe(80 - 60); // 20 tokens left in bank
   });
 
-  it('settles round correctly for WIN, LOSE (with multiplier), and DRAW', () => {
+  it('settles round correctly for WIN, LOSE (with multiplier), and DRAW with won tokens accumulating in dealerBank', () => {
     let table = createInitialTable('7K9X2', 'Host', 0, 10);
-    table.players[table.hostId].chips = 200;
-    table.players[table.hostId].totalBuyIn = 200;
     table = setDealerBank(table, 200);
 
     table = addPlayer(table, 'p1', 'Winner');
@@ -205,19 +210,24 @@ describe('Casino & Shan Koe Mee Game Engine Features', () => {
     // p3: 90 + 10 = 100
     expect(table.players['p3'].chips).toBe(100);
 
-    // Host chips: Started with 200, p1 profit -40, p2 win +30 = net -10 => 190 chips
-    expect(table.players[table.hostId].chips).toBe(190);
+    // Tokens won/lost accumulate in dealerBank until rotated:
+    // Started with 200 bank, p1 profit -40, p2 loss +30 = net -10 => 190 bank
     expect(table.dealerBank).toBe(190);
+    expect(table.players[table.hostId].chips).toBe(0);
 
     // Zero-sum check
     const zeroSum = verifyZeroSum(table);
     expect(zeroSum.balanced).toBe(true);
+
+    // When dealer rotates to p1, remaining 190 bank is returned to outgoing Host's chips
+    table = rotateBanker(table, 'p1', true);
+    expect(table.players[table.hostId].chips).toBe(190);
+    expect(table.dealerBank).toBe(0); // Incoming dealer p1 starts with 0 bank to allocate
+    expect(verifyZeroSum(table).balanced).toBe(true);
   });
 
   it('allows Dealer or Host to edit a previous round and recalculates token balances with audit trail', () => {
     let table = createInitialTable('7K9X2', 'Host', 0, 10);
-    table.players[table.hostId].chips = 200;
-    table.players[table.hostId].totalBuyIn = 200;
     table = setDealerBank(table, 200);
 
     table = addPlayer(table, 'p1', 'Player 1');
@@ -229,7 +239,7 @@ describe('Casino & Shan Koe Mee Game Engine Features', () => {
     table = settleRoundMulti(table);
 
     expect(table.players['p1'].chips).toBe(80);
-    expect(table.players[table.hostId].chips).toBe(220);
+    expect(table.dealerBank).toBe(220); // 200 + 20 = 220
 
     // Host realizes mistake: Player 1 actually WON x2 (+40 profit)!
     const pastRound = table.roundHistory[0];
@@ -249,8 +259,8 @@ describe('Casino & Shan Koe Mee Game Engine Features', () => {
     // Player 1 had delta -20, now delta +40. Net difference is +60!
     // Player chips: 80 + 60 = 140
     expect(table.players['p1'].chips).toBe(140);
-    // Dealer chips: 220 - 60 = 160
-    expect(table.players[table.hostId].chips).toBe(160);
+    // Active dealer bank: 220 - 60 = 160
+    expect(table.dealerBank).toBe(160);
 
     // Audit trail preserved
     const editedRound = table.roundHistory[0];
@@ -267,27 +277,58 @@ describe('Casino & Shan Koe Mee Game Engine Features', () => {
     expect(verifyZeroSum(table).balanced).toBe(true);
   });
 
-  it('resets dealer bank and stint counter on dealer rotation', () => {
+  it('resets dealer bank and stint counter on dealer rotation, returning bank tokens to outgoing dealer', () => {
     let table = createInitialTable('7K9X2', 'Host', 0, 10);
+    table = setDealerBank(table, 200);
     table = addPlayer(table, 'p1', 'NewDealer');
     table = requestTopUp(table, 'p1', 150, 'TOPUP');
     table = approveTopUp(table, table.topUpRequests[0].id);
 
-    table = rotateBanker(table, 'p1');
+    table = rotateBanker(table, 'p1', true);
     expect(table.bankerId).toBe('p1');
     expect(table.dealerRoundsPlayed).toBe(0);
-    expect(table.dealerBank).toBe(150);
+    expect(table.dealerBank).toBe(0); // Awaiting new dealer to allocate bank
     expect(table.players['p1'].isBanker).toBe(true);
     expect(table.players[table.hostId].isBanker).toBe(false);
+    expect(table.players[table.hostId].chips).toBe(200); // 200 returned to host chips
+
+    // New dealer allocates 50 tokens from their 150 tokens to the bank
+    table = setDealerBank(table, 50);
+    expect(table.dealerBank).toBe(50);
+    expect(table.players['p1'].chips).toBe(100); // 150 - 50 = 100
+    expect(verifyZeroSum(table).balanced).toBe(true);
   });
 
-  it('crowns dealer manually when requested', () => {
+  it('auto-crowns next player when dealer bank drops to 0', () => {
+    let table = createInitialTable('7K9X2', 'Host', 0, 10);
+    table = setDealerBank(table, 50); // Dealer bank has 50 tokens
+
+    table = addPlayer(table, 'p1', 'NextInLine');
+    table = requestTopUp(table, 'p1', 100, 'TOPUP');
+    table = approveTopUp(table, table.topUpRequests[0].id);
+
+    // Player bets 25 with x2 WIN -> 50 payout from dealer bank!
+    table = commitPlayerBet(table, 'p1', 25);
+    table = stagePlayerDecision(table, 'p1', 'WIN', 2);
+
+    table = settleRoundMulti(table);
+
+    // Bank drops from 50 to 0 -> Next player is automatically crowned!
+    expect(table.bankerId).toBe('p1');
+    expect(table.players['p1'].isBanker).toBe(true);
+    expect(table.dealerBank).toBe(0); // Awaiting new dealer to allocate bank
+    expect(table.logs[0].type).toBe('DEALER_ROTATED');
+    expect(table.logs.some(l => l.description.includes('Automatically crowned next player'))).toBe(true);
+    expect(verifyZeroSum(table).balanced).toBe(true);
+  });
+
+  it('crowns dealer manually when Crown Next is triggered', () => {
     let table = createInitialTable('7K9X2', 'Host', 0, 10);
     table = addPlayer(table, 'p1', 'Player 1');
     table = requestTopUp(table, 'p1', 50, 'TOPUP');
     table = approveTopUp(table, table.topUpRequests[0].id);
 
-    table = rotateBanker(table, 'p1');
+    table = rotateBanker(table, 'p1', true);
     expect(table.bankerId).toBe('p1');
     expect(table.players['p1'].isBanker).toBe(true);
     expect(table.logs[0].type).toBe('DEALER_ROTATED');

@@ -73,11 +73,11 @@ export function createInitialTable(
     name: hostName,
     avatarColor: AVATAR_COLORS[0],
     avatarIcon: getPlayerIcon(hostName, hostId),
-    chips: buyIn > 0 ? buyIn : 100, // Host bank starter
+    chips: buyIn > 0 ? buyIn : 0, // Host doesn't choose starting bank amount; sets via popup
     currentBet: 0,
     isBanker: true,
     isConnected: true,
-    totalBuyIn: buyIn > 0 ? buyIn : 100,
+    totalBuyIn: buyIn > 0 ? buyIn : 0,
     isCommitted: false,
   };
 
@@ -92,7 +92,7 @@ export function createInitialTable(
     hostQrUrl,
     dealerRotationFrequency: dealerRotationFrequency > 0 ? dealerRotationFrequency : 5,
     dealerRoundsPlayed: 0,
-    dealerBank: buyIn > 0 ? buyIn : 100,
+    dealerBank: 0,
     players: {
       [hostId]: hostPlayer,
     },
@@ -104,8 +104,8 @@ export function createInitialTable(
         id: 'log-' + Math.random().toString(36).substring(2, 9),
         roundNumber: 1,
         timestamp: Date.now(),
-        type: 'DEALER_BANK_SET',
-        description: `Room created by ${hostName}. Initial dealer bank: ${buyIn > 0 ? buyIn : 100} tokens.`,
+        type: 'DEALER_ROTATED',
+        description: `Room created by ${hostName}. Awaiting initial dealer bank allocation.`,
       },
     ],
     stagedDecisions: {},
@@ -323,15 +323,61 @@ export function rejectTopUp(state: TableState, requestId: string): TableState {
    ========================================================================= */
 
 export function setDealerBank(state: TableState, amount: number): TableState {
-  if (amount < 0) return state;
+  if (amount <= 0) return state;
   const banker = state.players[state.bankerId];
+  if (!banker) return state;
+
+  const isHost = banker.id === state.hostId;
+  const updatedPlayers = { ...state.players };
+
+  const currentBank = state.dealerBank || 0;
+  const diff = amount - currentBank;
+
+  if (!isHost) {
+    // Non-host dealer: Subtracted from his tokens
+    if (diff > 0) {
+      if (banker.chips < diff) return state;
+      updatedPlayers[state.bankerId] = {
+        ...banker,
+        chips: banker.chips - diff,
+      };
+    } else if (diff < 0) {
+      updatedPlayers[state.bankerId] = {
+        ...banker,
+        chips: banker.chips + (-diff),
+      };
+    }
+  } else {
+    // Host dealer: backed by host's bank account
+    if (diff > 0) {
+      if (banker.chips >= diff) {
+        updatedPlayers[state.bankerId] = {
+          ...banker,
+          chips: banker.chips - diff,
+        };
+      } else {
+        const fromChips = banker.chips;
+        const fromBacking = diff - fromChips;
+        updatedPlayers[state.bankerId] = {
+          ...banker,
+          chips: 0,
+          totalBuyIn: banker.totalBuyIn + fromBacking,
+        };
+      }
+    } else if (diff < 0) {
+      updatedPlayers[state.bankerId] = {
+        ...banker,
+        chips: banker.chips + (-diff),
+      };
+    }
+  }
 
   const logEntry: ActionLogEntry = {
     id: 'log-' + Math.random().toString(36).substring(2, 9),
     roundNumber: state.roundNumber,
     timestamp: Date.now(),
     type: 'DEALER_BANK_SET',
-    description: `Dealer ${banker ? banker.name : 'Banker'} set bankroll to ${amount} tokens.`,
+    description: `Dealer ${banker.name} allocated ${amount} tokens to bankroll.`,
     details: {
       tokens: amount,
     },
@@ -340,6 +386,7 @@ export function setDealerBank(state: TableState, amount: number): TableState {
   return {
     ...state,
     dealerBank: amount,
+    players: updatedPlayers,
     logs: [logEntry, ...(state.logs || [])],
   };
 }
@@ -478,9 +525,10 @@ export function settleRoundMulti(state: TableState): TableState {
   const startingBank = state.dealerBank;
   const endingBank = Math.max(0, startingBank + dealerBankDelta);
 
+  // Tokens won or lost stay in dealerBank until he is no longer dealer
   updatedPlayers[state.bankerId] = {
     ...banker,
-    chips: Math.max(0, banker.chips + dealerChipDelta),
+    chips: banker.chips,
     currentBet: 0,
     isCommitted: false,
   };
@@ -504,6 +552,37 @@ export function settleRoundMulti(state: TableState): TableState {
   };
 
   const nextRoundsPlayed = (state.dealerRoundsPlayed || 0) + 1;
+
+  // If that gets to 0, next player is automatically crowned!
+  if (endingBank <= 0) {
+    const playerList = Object.values(updatedPlayers);
+    const currentIdx = playerList.findIndex(p => p.id === state.bankerId);
+    const nextIdx = (currentIdx + 1) % playerList.length;
+    const nextBanker = playerList[nextIdx];
+
+    const bankDepletedLog: ActionLogEntry = {
+      id: 'log-' + Math.random().toString(36).substring(2, 9),
+      roundNumber: state.roundNumber,
+      timestamp: Date.now(),
+      type: 'DEALER_ROTATED',
+      description: `Dealer bank depleted to 0! Automatically crowned next player ${nextBanker.name}.`,
+    };
+
+    const stateAfterSettle: TableState = {
+      ...state,
+      pot: Math.max(0, state.pot - potDeducted),
+      dealerBank: 0,
+      dealerRoundsPlayed: nextRoundsPlayed,
+      players: updatedPlayers,
+      stagedDecisions: {},
+      roundHistory: [roundRecord, ...(state.roundHistory || [])],
+      logs: [bankDepletedLog, logEntry, ...(state.logs || [])],
+      roundNumber: state.roundNumber + 1,
+      phase: 'BETTING',
+    };
+
+    return rotateBanker(stateAfterSettle, nextBanker.id, true);
+  }
 
   return {
     ...state,
@@ -557,11 +636,16 @@ export function editRoundResult(
     }
   }
 
-  // Apply counter delta to dealer
-  updatedPlayers[oldRound.dealerId] = {
-    ...dealer,
-    chips: Math.max(0, dealer.chips + netDealerDelta),
-  };
+  // Apply counter delta to dealer (to dealerBank if currently active dealer, otherwise to chips)
+  let updatedDealerBank = state.dealerBank;
+  if (oldRound.dealerId === state.bankerId) {
+    updatedDealerBank = Math.max(0, (state.dealerBank || 0) + netDealerDelta);
+  } else {
+    updatedPlayers[oldRound.dealerId] = {
+      ...dealer,
+      chips: Math.max(0, dealer.chips + netDealerDelta),
+    };
+  }
 
   const newEndingBank = Math.max(0, oldRound.endingBank + netDealerDelta);
 
@@ -594,6 +678,7 @@ export function editRoundResult(
 
   return {
     ...state,
+    dealerBank: updatedDealerBank,
     players: updatedPlayers,
     roundHistory: updatedHistory,
     logs: [logEntry, ...(state.logs || [])],
@@ -604,9 +689,12 @@ export function editRoundResult(
    BANKER ROTATION
    ========================================================================= */
 
-export function rotateBanker(state: TableState, newBankerId: string): TableState {
+export function rotateBanker(state: TableState, newBankerId: string, force: boolean = false): TableState {
   const targetPlayer = state.players[newBankerId];
-  if (!targetPlayer || targetPlayer.chips < MIN_BANKER_TOKENS) return state;
+  if (!targetPlayer) return state;
+  if (!force && targetPlayer.chips < MIN_BANKER_TOKENS && targetPlayer.id !== state.hostId) {
+    return state;
+  }
 
   let potDelta = 0;
   const updatedPlayers: Record<string, Player> = {};
@@ -622,6 +710,14 @@ export function rotateBanker(state: TableState, newBankerId: string): TableState
         currentBet: 0,
         isCommitted: false,
       };
+    } else if (id === state.bankerId) {
+      // Outgoing dealer: return any remaining bank tokens to their stack
+      const refund = (state.dealerBank || 0) > 0 ? state.dealerBank : 0;
+      updatedPlayers[id] = {
+        ...p,
+        isBanker: false,
+        chips: p.chips + refund,
+      };
     } else {
       updatedPlayers[id] = {
         ...p,
@@ -635,14 +731,14 @@ export function rotateBanker(state: TableState, newBankerId: string): TableState
     roundNumber: state.roundNumber,
     timestamp: Date.now(),
     type: 'DEALER_ROTATED',
-    description: `Dealer rotated to ${targetPlayer.name}.`,
+    description: `Dealer rotated to ${targetPlayer.name}. Awaiting dealer bank allocation.`,
   };
 
   return {
     ...state,
     bankerId: newBankerId,
     dealerRoundsPlayed: 0,
-    dealerBank: targetPlayer.chips, // Defaults to new dealer's stack
+    dealerBank: 0, // Awaiting newly crowned dealer to set their bank amount
     stagedDecisions: {},
     pot: Math.max(0, state.pot - potDelta),
     players: updatedPlayers,
@@ -708,7 +804,9 @@ export function adjustPlayerChips(state: TableState, playerId: string, amount: n
 export function verifyZeroSum(state: TableState): { balanced: boolean; netDiscrepancy: number } {
   const totalBuyIns = Object.values(state.players).reduce((sum, p) => sum + p.totalBuyIn, 0);
   const totalChipsInPlay =
-    Object.values(state.players).reduce((sum, p) => sum + p.chips, 0) + state.pot;
+    Object.values(state.players).reduce((sum, p) => sum + p.chips, 0) +
+    (state.dealerBank || 0) +
+    state.pot;
   const netDiscrepancy = totalChipsInPlay - totalBuyIns;
 
   return {

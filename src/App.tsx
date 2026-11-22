@@ -196,7 +196,7 @@ export default function App() {
               }
               case 'ROTATE_BANKER': {
                 const { newBankerId } = msg.payload;
-                next = rotateBanker(current, newBankerId);
+                next = rotateBanker(current, newBankerId, true);
                 playSound('win');
                 break;
               }
@@ -362,13 +362,12 @@ export default function App() {
     hostName: string,
     thbPerToken: number,
     hostQrUrl?: string,
-    dealerRotationFrequency: number = 5,
-    initialDealerBank: number = 100
+    dealerRotationFrequency: number = 5
   ) => {
     const initialTable = createInitialTable(
       roomCode,
       hostName,
-      initialDealerBank,
+      0,
       thbPerToken,
       hostQrUrl,
       dealerRotationFrequency
@@ -556,7 +555,7 @@ export default function App() {
     if (isHost) {
       setTableState(current => {
         if (!current) return null;
-        const next = rotateBanker(current, newBankerId);
+        const next = rotateBanker(current, newBankerId, true);
         playSound('win');
         broadcastState(hostConnectionsRef.current, next);
         saveStateToStorage(next);
@@ -631,6 +630,7 @@ export default function App() {
               playerChips={myPlayer ? myPlayer.chips : tableState.defaultBuyIn || 0}
               isDancing={isJarDancing}
               onClick={triggerJarDance}
+              onOpenTopUp={() => setShowTopUpModal(true)}
             />
           </div>
 

@@ -19,6 +19,7 @@ import {
   AlertTriangle,
   RotateCw,
   Shield,
+  ArrowDownLeft,
 } from 'lucide-react';
 import {
   TableState,
@@ -81,12 +82,23 @@ export default function GameBoardTable({
   onSettleRound,
   onSetDealerBank,
   onRotateBanker,
+  onOpenTopUpModal,
 }: GameBoardTableProps) {
   const [selectedPlayerForDecision, setSelectedPlayerForDecision] = useState<Player | null>(null);
   const [tempOutcome, setTempOutcome] = useState<HandDecisionOutcome>('WIN');
   const [tempMultiplier, setTempMultiplier] = useState<BetMultiplier>(1);
   const [showBankModal, setShowBankModal] = useState<boolean>(false);
-  const [newBankAmount, setNewBankAmount] = useState<number>(tableState.dealerBank || 100);
+
+  const myPlayer = tableState.players[myPlayerId];
+  const myChips = myPlayer ? myPlayer.chips : 0;
+  const isHost = myPlayerId === tableState.hostId;
+
+  // Pop-up forces dealer to choose bank amount as soon as crowned
+  const isBankUnset = isBanker && (tableState.dealerBank <= 0);
+  const isBankModalOpen = showBankModal || isBankUnset;
+
+  const initialPreset = isHost ? 100 : Math.min(myChips, 20);
+  const [newBankAmount, setNewBankAmount] = useState<number>(tableState.dealerBank || initialPreset);
 
   const playersList = Object.values(tableState.players);
   // Sort so myPlayerId is placed at bottom center (index 0)
@@ -100,20 +112,16 @@ export default function GameBoardTable({
   const coverage = calculatePotentialPayout(tableState);
   const activeBetsCount = playersList.filter(p => !p.isBanker && p.currentBet > 0).length;
 
+  const currentDealerIdx = playersList.findIndex(p => p.id === tableState.bankerId);
+  const nextPlayerIdx = (currentDealerIdx + 1) % (playersList.length || 1);
+  const nextCandidate = playersList[nextPlayerIdx];
+
   const handleOpenDecision = (player: Player) => {
     if (!isBanker || player.isBanker || player.currentBet <= 0) return;
     const existing = staged[player.id];
     setTempOutcome(existing ? existing.outcome : 'WIN');
     setTempMultiplier(existing ? existing.multiplier : 1);
     setSelectedPlayerForDecision(player);
-  };
-
-  const handleAvatarClick = (e: React.MouseEvent, player: Player) => {
-    // Click on logo of the player by Dealer to crown Dealer manually
-    if (isBanker && !player.isBanker && onRotateBanker) {
-      e.stopPropagation();
-      onRotateBanker(player.id);
-    }
   };
 
   const handleConfirmDecision = () => {
@@ -123,7 +131,8 @@ export default function GameBoardTable({
   };
 
   const handleSaveBank = () => {
-    if (newBankAmount < 0) return;
+    if (newBankAmount <= 0) return;
+    if (!isHost && newBankAmount > myChips) return;
     onSetDealerBank(newBankAmount);
     setShowBankModal(false);
   };
@@ -156,13 +165,19 @@ export default function GameBoardTable({
               {/* Dealer Bank Status */}
               <div className="mt-0.5 pt-0.5 border-t border-[#D4AF37]/25 w-full flex items-center justify-between text-[10px] sm:text-[11px] font-bold">
                 <span className="text-amber-200/80">Bank:</span>
-                <span
-                  className={`font-black ${
-                    coverage.canCover ? 'text-emerald-300' : 'text-rose-400 animate-pulse'
-                  }`}
-                >
-                  {tableState.dealerBank} tokens
-                </span>
+                {tableState.dealerBank > 0 ? (
+                  <span
+                    className={`font-black ${
+                      coverage.canCover ? 'text-emerald-300' : 'text-rose-400 animate-pulse'
+                    }`}
+                  >
+                    {tableState.dealerBank} tokens
+                  </span>
+                ) : (
+                  <span className="text-amber-300 font-black animate-pulse text-[10px]">
+                    {isBanker ? 'Set Bank Now' : 'Awaiting Dealer...'}
+                  </span>
+                )}
               </div>
 
               {/* Dealer Rotation Stint Counter */}
@@ -175,7 +190,7 @@ export default function GameBoardTable({
               </div>
 
               {/* Bank Cover Warning */}
-              {!coverage.canCover && (
+              {!coverage.canCover && tableState.dealerBank > 0 && (
                 <div className="mt-1 flex items-center gap-1 text-[9px] font-black text-rose-300 bg-rose-950/80 px-1.5 py-0.5 rounded-md border border-rose-600/50">
                   <AlertTriangle className="w-3 h-3 text-rose-400 shrink-0" />
                   <span>Cap: Needs {coverage.requiredPayout}</span>
@@ -190,7 +205,6 @@ export default function GameBoardTable({
           if (player.currentBet <= 0) return null;
           const total = sortedPlayers.length;
           const angle = (idx / total) * 2 * Math.PI + Math.PI / 2;
-          // Position bet chip nicely inside the felt in front of each player
           const betRadiusX = 27;
           const betRadiusY = 25;
           const betLeft = 50 + betRadiusX * Math.cos(angle);
@@ -221,17 +235,15 @@ export default function GameBoardTable({
         {/* RADIAL PLAYER SEATS OUTSIDE THE TABLE (z-30 / z-40) */}
         {sortedPlayers.map((player, idx) => {
           const total = sortedPlayers.length;
-          // Distribute angles so index 0 (self) is at bottom center (90 deg)
           const angle = (idx / total) * 2 * Math.PI + Math.PI / 2;
-          const radiusX = 44; // Placed outside the table
-          const radiusY = 42; // Placed outside the table
+          const radiusX = 44;
+          const radiusY = 42;
           const leftPercent = 50 + radiusX * Math.cos(angle);
           const topPercent = 50 + radiusY * Math.sin(angle);
 
           const hasActiveBet = player.currentBet > 0;
           const decision = staged[player.id];
           const isSelected = selectedPlayerForDecision?.id === player.id;
-          const canBeCrownedByDealer = isBanker && !player.isBanker;
 
           return (
             <div
@@ -249,23 +261,20 @@ export default function GameBoardTable({
             >
               {/* Seat Avatar & Badges */}
               <div className="relative">
-                <button
-                  type="button"
-                  onClick={e => handleAvatarClick(e, player)}
-                  title={canBeCrownedByDealer ? `Click to crown ${player.name} as Dealer` : player.name}
+                <div
                   className={`w-9 h-9 sm:w-11 sm:h-11 rounded-full flex items-center justify-center shadow-xl border-2 transition-all ${
                     isSelected
                       ? 'border-yellow-300 ring-2 ring-yellow-400 scale-105'
                       : player.isBanker
                       ? 'border-[#F59E0B] bg-gradient-to-br from-[#451A03] to-[#78350F]'
                       : 'border-white/50 bg-gradient-to-br from-[#1C0306] to-[#3B070F]'
-                  } ${canBeCrownedByDealer ? 'cursor-pointer hover:ring-2 hover:ring-[#F59E0B] hover:scale-110 active:scale-95' : ''}`}
+                  }`}
                   style={{
                     backgroundColor: player.avatarColor ? `${player.avatarColor}33` : undefined,
                   }}
                 >
                   {renderAvatarIcon(player.avatarIcon)}
-                </button>
+                </div>
 
                 {/* Dealer Badge ("D") */}
                 {player.isBanker && (
@@ -309,31 +318,31 @@ export default function GameBoardTable({
         <div className="w-full max-w-md mt-2 flex items-center justify-between gap-2 px-2 shrink-0 z-30">
           <button
             onClick={() => setShowBankModal(true)}
-            className="px-2.5 py-2 rounded-xl bg-[#2D040A] border border-[#D4AF37]/50 text-amber-200 text-xs font-black flex items-center gap-1 hover:bg-[#430811] transition-all"
+            className="px-2.5 py-2 rounded-xl bg-[#2D040A] border border-[#D4AF37]/50 text-amber-200 text-xs font-black flex items-center gap-1 hover:bg-[#430811] transition-all cursor-pointer"
           >
             <Shield className="w-3.5 h-3.5 text-[#F59E0B]" />
             <span>Bank: {tableState.dealerBank}</span>
           </button>
 
+          {/* "Crown next" button with Rotate icon */}
           {onRotateBanker && playersList.some(p => !p.isBanker) && (
             <button
               type="button"
               onClick={() => {
-                const nextCandidate = playersList.find(p => !p.isBanker);
                 if (nextCandidate) onRotateBanker(nextCandidate.id);
               }}
-              title="Pass Dealer to Next Player"
-              className="px-2 py-2 rounded-xl bg-[#2D040A] border border-[#D4AF37]/50 text-amber-200 hover:bg-[#430811] text-xs font-black flex items-center gap-1 transition-all"
+              title={`Crown next: ${nextCandidate?.name || 'next player'}`}
+              className="px-2.5 py-2 rounded-xl bg-[#2D040A] border border-[#D4AF37]/50 text-amber-200 hover:bg-[#430811] text-xs font-black flex items-center gap-1.5 transition-all shadow-md active:scale-95 cursor-pointer shrink-0"
             >
               <RotateCw className="w-3.5 h-3.5 text-[#F59E0B]" />
-              <span className="hidden xs:inline">Pass Dealer</span>
+              <span>Crown next</span>
             </button>
           )}
 
           <button
             onClick={onSettleRound}
-            disabled={!coverage.canCover || activeBetsCount === 0}
-            className="flex-1 py-2 px-3 bg-gradient-to-r from-[#F59E0B] via-[#EAB308] to-[#D97706] hover:brightness-110 disabled:opacity-40 text-[#451A03] font-black text-xs rounded-xl shadow-lg transition-transform active:scale-95 flex items-center justify-center gap-1.5"
+            disabled={!coverage.canCover || activeBetsCount === 0 || tableState.dealerBank <= 0}
+            className="flex-1 py-2 px-3 bg-gradient-to-r from-[#F59E0B] via-[#EAB308] to-[#D97706] hover:brightness-110 disabled:opacity-40 text-[#451A03] font-black text-xs rounded-xl shadow-lg transition-transform active:scale-95 flex items-center justify-center gap-1.5 cursor-pointer"
           >
             <Check className="w-4 h-4" />
             <span>
@@ -440,7 +449,7 @@ export default function GameBoardTable({
 
               <button
                 onClick={handleConfirmDecision}
-                className="w-full py-2.5 bg-gradient-to-r from-[#F59E0B] to-[#D97706] text-[#451A03] font-black text-xs rounded-xl shadow-md flex items-center justify-center gap-1.5"
+                className="w-full py-2.5 bg-gradient-to-r from-[#F59E0B] to-[#D97706] text-[#451A03] font-black text-xs rounded-xl shadow-md flex items-center justify-center gap-1.5 cursor-pointer"
               >
                 <Check className="w-4 h-4" />
                 <span>Confirm Decision</span>
@@ -450,51 +459,115 @@ export default function GameBoardTable({
         )}
       </AnimatePresence>
 
-      {/* DEALER SET BANKROLL MODAL */}
+      {/* FORCED DEALER BANK POPUP (Shown immediately when crowned) */}
       <AnimatePresence>
-        {showBankModal && (
-          <div className="fixed inset-0 z-50 bg-black/70 backdrop-blur-xs flex items-center justify-center p-4">
+        {isBankModalOpen && (
+          <div className="fixed inset-0 z-50 bg-black/85 backdrop-blur-sm flex items-center justify-center p-4">
             <motion.div
               initial={{ scale: 0.9, opacity: 0 }}
               animate={{ scale: 1, opacity: 1 }}
               exit={{ scale: 0.9, opacity: 0 }}
-              className="bg-gradient-to-b from-[#1C0206] via-[#2D040A] to-[#120104] border-2 border-[#D4AF37]/60 rounded-3xl p-4 max-w-xs w-full shadow-2xl text-white relative"
+              className="bg-gradient-to-b from-[#1C0206] via-[#2D040A] to-[#120104] border-2 border-[#D4AF37]/60 rounded-3xl p-5 max-w-xs w-full shadow-2xl text-white relative"
             >
-              <button
-                onClick={() => setShowBankModal(false)}
-                className="absolute top-3 right-3 text-amber-200/80 hover:text-white"
-              >
-                <X className="w-4 h-4" />
-              </button>
+              {!isBankUnset && (
+                <button
+                  onClick={() => setShowBankModal(false)}
+                  className="absolute top-3 right-3 text-amber-200/80 hover:text-white"
+                >
+                  <X className="w-4 h-4" />
+                </button>
+              )}
 
-              <h4 className="text-sm font-black text-amber-100 flex items-center gap-1.5 mb-1">
-                <Shield className="w-4 h-4 text-[#F59E0B]" />
-                <span>Dealer Bankroll</span>
+              <h4 className="text-base font-black text-amber-100 flex items-center gap-1.5 mb-1">
+                <Shield className="w-5 h-5 text-[#F59E0B]" />
+                <span>{isBankUnset ? 'Allocate Dealer Bankroll' : 'Adjust Dealer Bank'}</span>
               </h4>
-              <p className="text-xs text-amber-200/70 mb-3">
-                Dealer cannot pay out more than bank holds.
+              <p className="text-xs text-amber-200/80 mb-3">
+                {isHost
+                  ? 'As the host, your bank account backs the room. Choose your starting bank tokens:'
+                  : 'You are the Dealer! Choose the bank amount. This will be deducted from your tokens.'}
               </p>
 
-              <div className="mb-4">
-                <label className="block text-[11px] font-black text-amber-200 mb-1">
-                  Bank Tokens
-                </label>
-                <input
-                  type="number"
-                  min={0}
-                  value={newBankAmount}
-                  onChange={e => setNewBankAmount(Math.max(0, parseInt(e.target.value) || 0))}
-                  className="w-full bg-[#140103] border border-[#D4AF37]/50 rounded-xl px-3 py-2 text-sm font-black text-white focus:outline-none focus:ring-2 focus:ring-[#F59E0B]"
-                />
-              </div>
+              {!isHost && myChips <= 0 ? (
+                <div className="space-y-3">
+                  <div className="p-3 rounded-2xl bg-rose-950/70 border border-rose-600/50 text-xs text-rose-200 text-center font-bold">
+                    You have 0 tokens. Please top up your tokens or crown the next player.
+                  </div>
+                  <div className="flex gap-2">
+                    {onOpenTopUpModal && (
+                      <button
+                        type="button"
+                        onClick={onOpenTopUpModal}
+                        className="flex-1 py-2 bg-gradient-to-r from-[#F59E0B] to-[#D97706] text-[#451A03] font-black text-xs rounded-xl flex items-center justify-center gap-1 shadow-md"
+                      >
+                        <ArrowDownLeft className="w-3.5 h-3.5" />
+                        <span>Top Up</span>
+                      </button>
+                    )}
+                    {onRotateBanker && (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          if (nextCandidate) onRotateBanker(nextCandidate.id);
+                        }}
+                        className="flex-1 py-2 bg-[#3B070F] border border-[#D4AF37]/40 text-amber-200 font-black text-xs rounded-xl flex items-center justify-center gap-1 shadow-md"
+                      >
+                        <RotateCw className="w-3.5 h-3.5" />
+                        <span>Crown Next</span>
+                      </button>
+                    )}
+                  </div>
+                </div>
+              ) : (
+                <>
+                  {/* Preset Buttons */}
+                  <div className="grid grid-cols-4 gap-1.5 mb-2">
+                    {(isHost ? [50, 100, 200, 500] : [10, 20, 50, myChips]).map((amt, idx) => {
+                      if (!isHost && amt > myChips && idx !== 3) return null;
+                      return (
+                        <button
+                          key={idx}
+                          type="button"
+                          onClick={() => setNewBankAmount(amt)}
+                          className={`py-1.5 rounded-xl text-xs font-black border transition-all ${
+                            newBankAmount === amt
+                              ? 'bg-gradient-to-r from-[#F59E0B] to-[#D97706] text-[#451A03] border-[#FCD34D]'
+                              : 'bg-[#180206] text-amber-200/80 border-[#D4AF37]/35'
+                          }`}
+                        >
+                          {idx === 3 && !isHost ? 'All' : amt}
+                        </button>
+                      );
+                    })}
+                  </div>
 
-              <button
-                onClick={handleSaveBank}
-                className="w-full py-2.5 bg-gradient-to-r from-[#F59E0B] to-[#D97706] text-[#451A03] font-black text-xs rounded-xl shadow-md flex items-center justify-center gap-1.5"
-              >
-                <Check className="w-4 h-4" />
-                <span>Update Bankroll</span>
-              </button>
+                  <div className="mb-4">
+                    <label className="block text-[11px] font-black text-amber-200 mb-1">
+                      Bank Tokens {!isHost && `(Max: ${myChips})`}
+                    </label>
+                    <input
+                      type="number"
+                      min={1}
+                      max={isHost ? undefined : myChips}
+                      value={newBankAmount}
+                      onChange={e => {
+                        const val = parseInt(e.target.value) || 0;
+                        setNewBankAmount(isHost ? Math.max(0, val) : Math.min(myChips, Math.max(0, val)));
+                      }}
+                      className="w-full bg-[#140103] border border-[#D4AF37]/50 rounded-xl px-3 py-2 text-sm font-black text-white focus:outline-none focus:ring-2 focus:ring-[#F59E0B]"
+                    />
+                  </div>
+
+                  <button
+                    onClick={handleSaveBank}
+                    disabled={newBankAmount <= 0 || (!isHost && newBankAmount > myChips)}
+                    className="w-full py-2.5 bg-gradient-to-r from-[#F59E0B] to-[#D97706] hover:brightness-110 disabled:opacity-40 text-[#451A03] font-black text-xs rounded-xl shadow-md flex items-center justify-center gap-1.5 cursor-pointer"
+                  >
+                    <Check className="w-4 h-4" />
+                    <span>Confirm Bank Allocation</span>
+                  </button>
+                </>
+              )}
             </motion.div>
           </div>
         )}

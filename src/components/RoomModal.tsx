@@ -13,8 +13,7 @@ interface RoomModalProps {
     name: string,
     thbPerToken: number,
     hostQrUrl?: string,
-    dealerRotationFrequency?: number,
-    initialDealerBank?: number
+    dealerRotationFrequency?: number
   ) => void;
   onJoinRoom: (roomId: string, name: string) => void;
 }
@@ -32,7 +31,6 @@ export default function RoomModal({
   const [roomCode, setRoomCode] = useState(currentRoomId || generateRoomCode());
   const [thbPerToken, setThbPerToken] = useState(10);
   const [dealerRotation, setDealerRotation] = useState(5);
-  const [initialDealerBank, setInitialDealerBank] = useState(100);
   const [hostQrUrl, setHostQrUrl] = useState<string | undefined>(undefined);
   const [copied, setCopied] = useState(false);
 
@@ -77,8 +75,7 @@ export default function RoomModal({
         name.trim(),
         thbPerToken > 0 ? thbPerToken : 10,
         hostQrUrl,
-        dealerRotation > 0 ? dealerRotation : 5,
-        initialDealerBank > 0 ? initialDealerBank : 100
+        dealerRotation > 0 ? dealerRotation : 5
       );
     } else if (activeTab === 'JOIN') {
       if (!roomCode.trim()) return;
@@ -289,25 +286,6 @@ export default function RoomModal({
                       className="w-full bg-[#1A0307] border border-[#D4AF37]/50 rounded-xl px-3 py-1.5 text-sm font-black text-white focus:outline-none focus:ring-2 focus:ring-[#F59E0B]"
                     />
                   </div>
-                </div>
-
-                {/* Initial Dealer Bank */}
-                <div>
-                  <label className="block text-[11px] font-black text-amber-200 mb-1">
-                    Your Starting Dealer Bankroll
-                  </label>
-                  <input
-                    type="number"
-                    min={10}
-                    value={initialDealerBank}
-                    onChange={e =>
-                      setInitialDealerBank(Math.max(10, parseInt(e.target.value) || 10))
-                    }
-                    className="w-full bg-[#1A0307] border border-[#D4AF37]/50 rounded-xl px-3 py-1.5 text-sm font-black text-white focus:outline-none focus:ring-2 focus:ring-[#F59E0B]"
-                  />
-                  <p className="text-[10px] text-amber-300/70 mt-1">
-                    Dealer cannot pay out more than bank holds.
-                  </p>
                 </div>
               </>
             )}
