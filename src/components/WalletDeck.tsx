@@ -1,13 +1,17 @@
 import { useState, useRef } from 'react';
-import { Wallet, Crown, RotateCcw, Check, Coins, Sliders } from 'lucide-react';
+import { Wallet, Crown, RotateCcw, Check, Coins, Sliders, X } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
 import DraggableChip from './DraggableChip';
 import { playSound } from '../utils/audio';
+import { Player } from '../types';
 
 interface WalletDeckProps {
   chips: number;
   currentBet: number;
   isBanker: boolean;
   isCommitted?: boolean;
+  players?: Record<string, Player>;
+  onRotateBanker?: (newBankerId: string) => void;
   onCommitBet: (amount: number) => void;
   onOpenTopUpModal: () => void;
   onAdjustChips?: (amount: number) => void;
@@ -31,6 +35,8 @@ export default function WalletDeck({
   currentBet,
   isBanker,
   isCommitted = false,
+  players,
+  onRotateBanker,
   onCommitBet,
   onOpenTopUpModal,
   onAdjustChips,
@@ -38,6 +44,7 @@ export default function WalletDeck({
   const [stagedBet, setStagedBet] = useState<number>(0);
   const [showCustom, setShowCustom] = useState<boolean>(false);
   const [customAmount, setCustomAmount] = useState<number>(5);
+  const [showChangeDealerModal, setShowChangeDealerModal] = useState<boolean>(false);
 
   const prankHoldTimer3s = useRef<number | null>(null);
   const prankHoldTimer5s = useRef<number | null>(null);
@@ -132,10 +139,14 @@ export default function WalletDeck({
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-1.5">
           {isBanker ? (
-            <div className="flex items-center gap-1 text-[11px] font-black text-[#FDE047] bg-[#2E050B] px-2.5 py-0.5 rounded-xl border border-[#D4AF37]/50">
+            <button
+              type="button"
+              onClick={() => setShowChangeDealerModal(true)}
+              className="flex items-center gap-1.5 text-[11px] font-black text-[#FDE047] bg-gradient-to-r from-[#3D0A14] to-[#250409] hover:brightness-125 px-2.5 py-1 rounded-xl border border-[#D4AF37]/60 shadow-sm transition-transform active:scale-95 cursor-pointer"
+            >
               <Crown className="w-3.5 h-3.5 text-[#F59E0B]" />
-              <span>You are Dealer</span>
-            </div>
+              <span>Change Dealer</span>
+            </button>
           ) : (
             <div className="flex items-center gap-1.5 text-[11px] font-extrabold text-amber-200">
               <Wallet className="w-3.5 h-3.5 text-[#F59E0B]" />
@@ -174,9 +185,13 @@ export default function WalletDeck({
               </div>
             </div>
           </div>
-          <span className="text-[10px] font-black text-[#FDE047] bg-[#3B070F] px-2.5 py-1 rounded-xl border border-[#D4AF37]/50 shrink-0">
-            Dealer
-          </span>
+          <button
+            type="button"
+            onClick={() => setShowChangeDealerModal(true)}
+            className="text-[10px] font-black text-[#FDE047] bg-[#3B070F] hover:bg-[#5C0A17] px-2.5 py-1 rounded-xl border border-[#D4AF37]/50 shrink-0 cursor-pointer transition-all active:scale-95 shadow-xs"
+          >
+            Change Dealer
+          </button>
         </div>
       ) : (
         <>
@@ -306,6 +321,81 @@ export default function WalletDeck({
           </div>
         </>
       )}
+
+      {/* Change Dealer Modal: Array of existing other players as clickable button list */}
+      <AnimatePresence>
+        {showChangeDealerModal && (
+          <div className="fixed inset-0 z-50 bg-black/85 backdrop-blur-sm flex items-center justify-center p-4">
+            <motion.div
+              initial={{ scale: 0.9, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.9, opacity: 0 }}
+              className="bg-gradient-to-b from-[#1C0206] via-[#2D040A] to-[#120104] border-2 border-[#D4AF37]/60 rounded-3xl p-5 max-w-xs w-full shadow-2xl text-white relative"
+            >
+              <button
+                type="button"
+                onClick={() => setShowChangeDealerModal(false)}
+                className="absolute top-3 right-3 text-amber-200/80 hover:text-white cursor-pointer"
+              >
+                <X className="w-4 h-4" />
+              </button>
+
+              <h4 className="text-base font-black text-amber-100 flex items-center gap-1.5 mb-1">
+                <Crown className="w-5 h-5 text-[#F59E0B]" />
+                <span>Change Dealer</span>
+              </h4>
+              <p className="text-xs text-amber-200/80 mb-3">
+                Select a player to crown as the new Dealer:
+              </p>
+
+              <div className="flex flex-col gap-2 max-h-60 overflow-y-auto pr-1">
+                {Object.values(players || {})
+                  .filter(p => !p.isBanker)
+                  .map(p => (
+                    <button
+                      key={p.id}
+                      type="button"
+                      onClick={() => {
+                        if (onRotateBanker) {
+                          onRotateBanker(p.id);
+                        }
+                        setShowChangeDealerModal(false);
+                        playSound('win');
+                      }}
+                      className="w-full flex items-center justify-between p-2.5 rounded-2xl bg-[#180206] hover:bg-[#3B070F] border border-[#D4AF37]/40 text-left transition-all active:scale-98 cursor-pointer shadow-sm group"
+                    >
+                      <div className="flex items-center gap-2.5">
+                        <div
+                          className="w-8 h-8 rounded-full flex items-center justify-center border border-[#D4AF37]/60 bg-black/40 text-amber-300 font-black text-xs shrink-0"
+                          style={{ backgroundColor: p.avatarColor ? `${p.avatarColor}33` : undefined }}
+                        >
+                          {p.name.charAt(0).toUpperCase()}
+                        </div>
+                        <div>
+                          <div className="text-xs font-black text-white group-hover:text-amber-200">
+                            {p.name}
+                          </div>
+                          <div className="text-[10px] font-bold text-amber-300/80">
+                            {p.chips} tokens
+                          </div>
+                        </div>
+                      </div>
+                      <span className="text-[10px] font-black text-[#451A03] bg-gradient-to-r from-[#F59E0B] to-[#D97706] px-2.5 py-1 rounded-xl shadow-xs">
+                        Crown
+                      </span>
+                    </button>
+                  ))}
+
+                {Object.values(players || {}).filter(p => !p.isBanker).length === 0 && (
+                  <div className="p-4 rounded-2xl bg-[#140103] border border-[#D4AF37]/25 text-center text-xs text-amber-200/70 font-bold">
+                    No other players at the table to crown.
+                  </div>
+                )}
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }

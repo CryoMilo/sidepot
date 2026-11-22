@@ -93,9 +93,8 @@ export default function GameBoardTable({
   const myChips = myPlayer ? myPlayer.chips : 0;
   const isHost = myPlayerId === tableState.hostId;
 
-  // Pop-up forces dealer to choose bank amount as soon as crowned
-  const isBankUnset = isBanker && (tableState.dealerBank <= 0);
-  const isBankModalOpen = showBankModal || isBankUnset;
+  // Bank modal state: only opened when user clicks to insert into bank
+  const isBankModalOpen = showBankModal;
 
   const initialPreset = isHost ? 100 : Math.min(myChips, 20);
   const [newBankAmount, setNewBankAmount] = useState<number>(tableState.dealerBank || initialPreset);
@@ -168,15 +167,26 @@ export default function GameBoardTable({
                 {tableState.dealerBank > 0 ? (
                   <span
                     className={`font-black ${
-                      coverage.canCover ? 'text-emerald-300' : 'text-rose-400 animate-pulse'
+                      coverage.canCover ? 'text-emerald-300' : 'text-amber-300'
                     }`}
                   >
                     {tableState.dealerBank} tokens
                   </span>
                 ) : (
-                  <span className="text-amber-300 font-black animate-pulse text-[10px]">
-                    {isBanker ? 'Set Bank Now' : 'Awaiting Dealer...'}
-                  </span>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      if (isBanker) {
+                        setNewBankAmount(isHost ? 100 : Math.min(myChips, 20));
+                        setShowBankModal(true);
+                      }
+                    }}
+                    className={`font-black text-[10px] ${
+                      isBanker ? 'text-amber-300 underline cursor-pointer hover:text-white' : 'text-amber-200/60'
+                    }`}
+                  >
+                    {isBanker ? 'Insert into Bank' : 'Awaiting Dealer...'}
+                  </button>
                 )}
               </div>
 
@@ -317,11 +327,15 @@ export default function GameBoardTable({
       {isBanker && (
         <div className="w-full max-w-md mt-2 flex items-center justify-between gap-2 px-2 shrink-0 z-30">
           <button
-            onClick={() => setShowBankModal(true)}
+            type="button"
+            onClick={() => {
+              setNewBankAmount(tableState.dealerBank > 0 ? tableState.dealerBank : (isHost ? 100 : Math.min(myChips, 20)));
+              setShowBankModal(true);
+            }}
             className="px-2.5 py-2 rounded-xl bg-[#2D040A] border border-[#D4AF37]/50 text-amber-200 text-xs font-black flex items-center gap-1 hover:bg-[#430811] transition-all cursor-pointer"
           >
             <Shield className="w-3.5 h-3.5 text-[#F59E0B]" />
-            <span>Bank: {tableState.dealerBank}</span>
+            <span>{tableState.dealerBank > 0 ? `Bank: ${tableState.dealerBank}` : 'Insert into Bank'}</span>
           </button>
 
           {/* "Crown next" button with Rotate icon */}
@@ -341,7 +355,7 @@ export default function GameBoardTable({
 
           <button
             onClick={onSettleRound}
-            disabled={!coverage.canCover || activeBetsCount === 0 || tableState.dealerBank <= 0}
+            disabled={activeBetsCount === 0}
             className="flex-1 py-2 px-3 bg-gradient-to-r from-[#F59E0B] via-[#EAB308] to-[#D97706] hover:brightness-110 disabled:opacity-40 text-[#451A03] font-black text-xs rounded-xl shadow-lg transition-transform active:scale-95 flex items-center justify-center gap-1.5 cursor-pointer"
           >
             <Check className="w-4 h-4" />
@@ -459,7 +473,7 @@ export default function GameBoardTable({
         )}
       </AnimatePresence>
 
-      {/* FORCED DEALER BANK POPUP (Shown immediately when crowned) */}
+      {/* DEALER BANK ALLOCATION MODAL (Opened via button click) */}
       <AnimatePresence>
         {isBankModalOpen && (
           <div className="fixed inset-0 z-50 bg-black/85 backdrop-blur-sm flex items-center justify-center p-4">
@@ -469,23 +483,22 @@ export default function GameBoardTable({
               exit={{ scale: 0.9, opacity: 0 }}
               className="bg-gradient-to-b from-[#1C0206] via-[#2D040A] to-[#120104] border-2 border-[#D4AF37]/60 rounded-3xl p-5 max-w-xs w-full shadow-2xl text-white relative"
             >
-              {!isBankUnset && (
-                <button
-                  onClick={() => setShowBankModal(false)}
-                  className="absolute top-3 right-3 text-amber-200/80 hover:text-white"
-                >
-                  <X className="w-4 h-4" />
-                </button>
-              )}
+              <button
+                type="button"
+                onClick={() => setShowBankModal(false)}
+                className="absolute top-3 right-3 text-amber-200/80 hover:text-white cursor-pointer"
+              >
+                <X className="w-4 h-4" />
+              </button>
 
               <h4 className="text-base font-black text-amber-100 flex items-center gap-1.5 mb-1">
                 <Shield className="w-5 h-5 text-[#F59E0B]" />
-                <span>{isBankUnset ? 'Allocate Dealer Bankroll' : 'Adjust Dealer Bank'}</span>
+                <span>{tableState.dealerBank > 0 ? 'Adjust Dealer Bank' : 'Insert into Bank'}</span>
               </h4>
               <p className="text-xs text-amber-200/80 mb-3">
                 {isHost
-                  ? 'As the host, your bank account backs the room. Choose your starting bank tokens:'
-                  : 'You are the Dealer! Choose the bank amount. This will be deducted from your tokens.'}
+                  ? 'As the host, your bank account backs the room. Choose your bank tokens:'
+                  : 'Choose the bank amount. This will be deducted from your tokens and used to pay winners.'}
               </p>
 
               {!isHost && myChips <= 0 ? (
@@ -564,7 +577,7 @@ export default function GameBoardTable({
                     className="w-full py-2.5 bg-gradient-to-r from-[#F59E0B] to-[#D97706] hover:brightness-110 disabled:opacity-40 text-[#451A03] font-black text-xs rounded-xl shadow-md flex items-center justify-center gap-1.5 cursor-pointer"
                   >
                     <Check className="w-4 h-4" />
-                    <span>Confirm Bank Allocation</span>
+                    <span>{tableState.dealerBank > 0 ? 'Confirm Bank Update' : 'Confirm Insert into Bank'}</span>
                   </button>
                 </>
               )}

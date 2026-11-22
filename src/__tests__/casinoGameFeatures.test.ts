@@ -132,38 +132,56 @@ describe('Casino & Shan Koe Mee Game Engine Features', () => {
     expect(table.topUpRequests.length).toBe(initialReqs);
   });
 
-  it('enforces dealer bank payout ceiling check', () => {
+  it('compensates winners for highest hand one by one until bank runs out, then crowns next player', () => {
     let table = createInitialTable('7K9X2', 'Host', 0, 10);
-    table = setDealerBank(table, 50); // Dealer bank holds 50 tokens
-    table = addPlayer(table, 'p1', 'Player One');
+    table = setDealerBank(table, 20); // Dealer has 20 tokens in bank
+
+    table = addPlayer(table, 'p1', 'HighHand5x');
+    table = addPlayer(table, 'p2', 'MidHand2x');
+    table = addPlayer(table, 'p3', 'LowHand1x');
+
     table = requestTopUp(table, 'p1', 50, 'TOPUP');
     table = approveTopUp(table, table.topUpRequests[0].id);
+    table = requestTopUp(table, 'p2', 50, 'TOPUP');
+    table = approveTopUp(table, table.topUpRequests[1].id);
+    table = requestTopUp(table, 'p3', 50, 'TOPUP');
+    table = approveTopUp(table, table.topUpRequests[2].id);
 
-    // Player bets 20 tokens
-    table = commitPlayerBet(table, 'p1', 20);
+    // Active bets:
+    // p1 bets 10 (chips: 40)
+    // p2 bets 20 (chips: 30)
+    // p3 bets 10 (chips: 40)
+    table = commitPlayerBet(table, 'p1', 10);
+    table = commitPlayerBet(table, 'p2', 20);
+    table = commitPlayerBet(table, 'p3', 10);
 
-    // Dealer stages decision: WIN with x3 multiplier => payout owed is 20 * 3 = 60 tokens
-    table = stagePlayerDecision(table, 'p1', 'WIN', 3);
+    // Decisions: All players win, total owed profit = 10*5 + 20*2 + 10*1 = 100 tokens!
+    table = stagePlayerDecision(table, 'p1', 'WIN', 5);
+    table = stagePlayerDecision(table, 'p2', 'WIN', 2);
+    table = stagePlayerDecision(table, 'p3', 'WIN', 1);
 
     const coverage = calculatePotentialPayout(table);
-    expect(coverage.requiredPayout).toBe(60);
-    expect(coverage.canCover).toBe(false); // 60 > 50
+    expect(coverage.requiredPayout).toBe(100);
+    expect(coverage.canCover).toBe(false); // 100 > 20
 
-    // Settle should fail / reject execution because dealer can never pay out more than bank holds!
-    const tableAfterFailedSettle = settleRoundMulti(table);
-    expect(tableAfterFailedSettle.roundNumber).toBe(1); // Still round 1
-    expect(tableAfterFailedSettle.roundHistory).toHaveLength(0);
-
-    // Dealer increases bank to 80 tokens
-    table = setDealerBank(table, 80);
-    const newCoverage = calculatePotentialPayout(table);
-    expect(newCoverage.canCover).toBe(true);
-
-    // Now settle succeeds!
+    // Settle proceeds! Highest hand (p1) is compensated first from the 20 tokens until bank runs out
     table = settleRoundMulti(table);
-    expect(table.roundNumber).toBe(2);
-    expect(table.roundHistory).toHaveLength(1);
-    expect(table.dealerBank).toBe(80 - 60); // 20 tokens left in bank
+
+    // p1 gets 10 bet back + all 20 tokens from bank = 30 tokens (40 + 30 = 70 chips)
+    expect(table.players['p1'].chips).toBe(70);
+    // p2 gets 20 bet back + 0 profit because bank is empty (30 + 20 = 50 chips)
+    expect(table.players['p2'].chips).toBe(50);
+    // p3 gets 10 bet back + 0 profit (40 + 10 = 50 chips)
+    expect(table.players['p3'].chips).toBe(50);
+
+    // Bank is 0 and next player is automatically crowned!
+    expect(table.dealerBank).toBe(0);
+    expect(table.bankerId).toBe('p1');
+    expect(table.players['p1'].isBanker).toBe(true);
+    expect(table.players[table.hostId].isBanker).toBe(false);
+
+    // Ledger remains zero-sum balanced
+    expect(verifyZeroSum(table).balanced).toBe(true);
   });
 
   it('settles round correctly for WIN, LOSE (with multiplier), and DRAW with won tokens accumulating in dealerBank', () => {

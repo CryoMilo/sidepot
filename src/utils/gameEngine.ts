@@ -446,86 +446,122 @@ export function settleRoundMulti(state: TableState): TableState {
   const banker = state.players[state.bankerId];
   if (!banker) return state;
 
-  const coverage = calculatePotentialPayout(state);
-  if (!coverage.canCover) {
-    // The dealer can never pay out more than the bank holds!
+  const staged = state.stagedDecisions || {};
+  const updatedPlayers: Record<string, Player> = { ...state.players };
+
+  // 1. Gather all active betting players (non-banker with currentBet > 0)
+  const activePlayers = Object.values(state.players).filter(
+    p => !p.isBanker && p.currentBet > 0
+  );
+
+  if (activePlayers.length === 0) {
     return state;
   }
 
-  const staged = state.stagedDecisions || {};
-  const results: PlayerRoundResult[] = [];
-  const updatedPlayers: Record<string, Player> = { ...state.players };
-
-  let dealerChipDelta = 0;
-  let dealerBankDelta = 0;
   let potDeducted = 0;
+  let currentBank = state.dealerBank || 0;
+  const startingBank = currentBank;
+  const results: PlayerRoundResult[] = [];
 
-  for (const [pId, player] of Object.entries(state.players)) {
-    if (player.isBanker || player.currentBet <= 0) continue;
+  // 2. First process LOSERS and DRAWS:
+  // Losers' bets and extra multiplier losses are collected into the dealer's bank
+  // Draws have their on-table bet refunded without gain/loss
+  for (const player of activePlayers) {
+    const decision: StagedDecision = staged[player.id] || { outcome: 'DRAW', multiplier: 1 };
+    potDeducted += player.currentBet;
 
-    const bet = player.currentBet;
-    potDeducted += bet;
-
-    const decision: StagedDecision = staged[pId] || { outcome: 'DRAW', multiplier: 1 };
-    let tokenDelta = 0;
-
-    if (decision.outcome === 'WIN') {
-      // Player gets back original on-table bet + (bet * multiplier) profit from dealer
-      const profit = bet * decision.multiplier;
-      tokenDelta = profit;
-      dealerChipDelta -= profit;
-      dealerBankDelta -= profit;
-
-      updatedPlayers[pId] = {
-        ...player,
-        chips: player.chips + bet + profit,
-        currentBet: 0,
-        isCommitted: false,
-      };
-    } else if (decision.outcome === 'LOSE') {
-      // Player loses on-table bet.
-      // If multiplier > 1, dealer collects extra (multiplier - 1) * bet from player's stack, capped by player's chips
+    if (decision.outcome === 'LOSE') {
+      const bet = player.currentBet;
       let extraLost = 0;
       if (decision.multiplier > 1) {
         extraLost = Math.min(player.chips, (decision.multiplier - 1) * bet);
       }
       const totalLost = bet + extraLost;
-      tokenDelta = -totalLost;
-      dealerChipDelta += totalLost;
-      dealerBankDelta += totalLost;
+      currentBank += totalLost;
 
-      updatedPlayers[pId] = {
+      updatedPlayers[player.id] = {
         ...player,
         chips: player.chips - extraLost,
         currentBet: 0,
         isCommitted: false,
       };
-    } else {
-      // DRAW: Player refunded on-table bet without profit/loss
-      tokenDelta = 0;
-      updatedPlayers[pId] = {
+
+      results.push({
+        playerId: player.id,
+        playerName: player.name,
+        bet,
+        outcome: 'LOSE',
+        multiplier: decision.multiplier,
+        tokenDelta: -totalLost,
+      });
+    } else if (decision.outcome === 'DRAW') {
+      const bet = player.currentBet;
+      updatedPlayers[player.id] = {
         ...player,
         chips: player.chips + bet,
         currentBet: 0,
         isCommitted: false,
       };
+
+      results.push({
+        playerId: player.id,
+        playerName: player.name,
+        bet,
+        outcome: 'DRAW',
+        multiplier: decision.multiplier,
+        tokenDelta: 0,
+      });
     }
+  }
+
+  // 3. Process WINNERS sorted by HIGHEST HAND one by one until bank runs out:
+  // Sort priority:
+  // 1) Multiplier descending (x5, then x3, then x2, then x1)
+  // 2) Potential profit owed descending (bet * multiplier)
+  // 3) Bet size descending
+  const winningPlayers = activePlayers
+    .filter(p => (staged[p.id]?.outcome || 'DRAW') === 'WIN')
+    .sort((a, b) => {
+      const multA = staged[a.id]?.multiplier || 1;
+      const multB = staged[b.id]?.multiplier || 1;
+      if (multB !== multA) return multB - multA;
+      const profitA = a.currentBet * multA;
+      const profitB = b.currentBet * multB;
+      if (profitB !== profitA) return profitB - profitA;
+      return b.currentBet - a.currentBet;
+    });
+
+  for (const player of winningPlayers) {
+    const bet = player.currentBet;
+    const decision: StagedDecision = staged[player.id] || { outcome: 'WIN', multiplier: 1 };
+    const owedProfit = bet * decision.multiplier;
+
+    // Compensate from the bank as much as the bank holds
+    const actualPayout = Math.min(currentBank, owedProfit);
+    currentBank -= actualPayout;
+
+    // Player gets back their original bet + whatever profit could be covered
+    updatedPlayers[player.id] = {
+      ...player,
+      chips: player.chips + bet + actualPayout,
+      currentBet: 0,
+      isCommitted: false,
+    };
 
     results.push({
-      playerId: pId,
+      playerId: player.id,
       playerName: player.name,
       bet,
-      outcome: decision.outcome,
+      outcome: 'WIN',
       multiplier: decision.multiplier,
-      tokenDelta,
+      tokenDelta: actualPayout,
     });
   }
 
-  // Update dealer's chips and bank
-  const startingBank = state.dealerBank;
-  const endingBank = Math.max(0, startingBank + dealerBankDelta);
+  const endingBank = currentBank;
+  const dealerBankDelta = endingBank - startingBank;
 
-  // Tokens won or lost stay in dealerBank until he is no longer dealer
+  // Dealer personal chips stay untouched during rounds (won/lost tokens stay in bank)
   updatedPlayers[state.bankerId] = {
     ...banker,
     chips: banker.chips,
@@ -553,7 +589,7 @@ export function settleRoundMulti(state: TableState): TableState {
 
   const nextRoundsPlayed = (state.dealerRoundsPlayed || 0) + 1;
 
-  // If that gets to 0, next player is automatically crowned!
+  // 4. If the bank runs out (endingBank <= 0), automatically crown the next player!
   if (endingBank <= 0) {
     const playerList = Object.values(updatedPlayers);
     const currentIdx = playerList.findIndex(p => p.id === state.bankerId);
@@ -565,7 +601,7 @@ export function settleRoundMulti(state: TableState): TableState {
       roundNumber: state.roundNumber,
       timestamp: Date.now(),
       type: 'DEALER_ROTATED',
-      description: `Dealer bank depleted to 0! Automatically crowned next player ${nextBanker.name}.`,
+      description: `Dealer bank ran out of tokens! Automatically crowned next player ${nextBanker.name}.`,
     };
 
     const stateAfterSettle: TableState = {

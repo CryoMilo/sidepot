@@ -655,6 +655,8 @@ export default function App() {
               currentBet={myPlayer ? myPlayer.currentBet : 0}
               isBanker={isCurrentBanker}
               isCommitted={myPlayer ? myPlayer.isCommitted : false}
+              players={tableState.players}
+              onRotateBanker={handleRotateBanker}
               onCommitBet={handleCommitBet}
               onOpenTopUpModal={() => setShowTopUpModal(true)}
               onAdjustChips={handleAdjustChips}
