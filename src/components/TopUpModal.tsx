@@ -16,6 +16,7 @@ interface TopUpModalProps {
   isOpen: boolean;
   onClose: () => void;
   isHost: boolean;
+  isDealer?: boolean;
   myPlayerId: string;
   players: Record<string, Player>;
   thbPerToken: number;
@@ -30,6 +31,7 @@ export default function TopUpModal({
   isOpen,
   onClose,
   isHost,
+  isDealer = false,
   myPlayerId,
   players,
   thbPerToken = 10,
@@ -39,7 +41,11 @@ export default function TopUpModal({
   onApproveRequest,
   onRejectRequest,
 }: TopUpModalProps) {
-  const [tab, setTab] = useState<'BUY' | 'CASHOUT' | 'HOST_QUEUE'>('BUY');
+  const canApprove = isHost || isDealer;
+  const pendingRequests = topUpRequests.filter(r => r.status === 'PENDING');
+  const [tab, setTab] = useState<'BUY' | 'CASHOUT' | 'HOST_QUEUE'>(
+    canApprove && pendingRequests.length > 0 ? 'HOST_QUEUE' : 'BUY'
+  );
   const [tokenAmount, setTokenAmount] = useState<number>(50);
   const [cashOutAmount, setCashOutAmount] = useState<number>(50);
   const [requestSent, setRequestSent] = useState<boolean>(false);
@@ -48,7 +54,6 @@ export default function TopUpModal({
 
   const me = players[myPlayerId];
   const myChips = me ? me.chips : 0;
-  const pendingRequests = topUpRequests.filter(r => r.status === 'PENDING');
   const myPendingRequests = topUpRequests.filter(
     r => r.playerId === myPlayerId && r.status === 'PENDING'
   );
@@ -117,7 +122,7 @@ export default function TopUpModal({
             <ArrowUpRight className="w-3.5 h-3.5" />
             <span>Cash Out</span>
           </button>
-          {isHost && (
+          {canApprove && (
             <button
               onClick={() => setTab('HOST_QUEUE')}
               className={`flex-1 flex items-center justify-center gap-1 py-1.5 rounded-xl text-xs font-black transition-all relative ${
@@ -309,8 +314,8 @@ export default function TopUpModal({
           </div>
         )}
 
-        {/* TAB 3: HOST APPROVAL QUEUE */}
-        {tab === 'HOST_QUEUE' && isHost && (
+        {/* TAB 3: APPROVAL QUEUE */}
+        {tab === 'HOST_QUEUE' && canApprove && (
           <div className="space-y-3">
             <h4 className="text-xs font-black uppercase tracking-wider text-amber-200">
               Pending Requests ({pendingRequests.length})

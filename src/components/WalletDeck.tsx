@@ -10,6 +10,7 @@ interface WalletDeckProps {
   currentBet: number;
   isBanker: boolean;
   isCommitted?: boolean;
+  hasPendingApprovals?: boolean;
   players?: Record<string, Player>;
   onRotateBanker?: (newBankerId: string) => void;
   onCommitBet: (amount: number) => void;
@@ -35,6 +36,7 @@ export default function WalletDeck({
   currentBet,
   isBanker,
   isCommitted = false,
+  hasPendingApprovals = false,
   players,
   onRotateBanker,
   onCommitBet,
@@ -164,10 +166,18 @@ export default function WalletDeck({
         <button
           type="button"
           onClick={onOpenTopUpModal}
-          className="text-[10px] font-black text-[#FDE047] bg-[#2C060D] hover:bg-[#3D0A14] px-2.5 py-1 rounded-xl border border-[#D4AF37]/50 flex items-center gap-1 transition-all active:scale-95 shadow-xs"
+          className="relative text-[10px] font-black text-[#FDE047] bg-[#2C060D] hover:bg-[#3D0A14] px-2.5 py-1 rounded-xl border border-[#D4AF37]/50 flex items-center gap-1 transition-all active:scale-95 shadow-xs cursor-pointer"
         >
           <Coins className="w-3.5 h-3.5 text-[#F59E0B]" />
           <span>Top-up / Cash-out</span>
+
+          {/* Red dot reminder for Dealer/Host if pending approval */}
+          {hasPendingApprovals && (
+            <span className="absolute -top-1 -right-1 flex h-2.5 w-2.5">
+              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-rose-400 opacity-75" />
+              <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-rose-600 border border-white" />
+            </span>
+          )}
         </button>
       </div>
 

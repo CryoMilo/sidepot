@@ -36,15 +36,10 @@ export default function DraggableChip({
   const handleDragEnd = (_: MouseEvent | TouchEvent | PointerEvent, info: PanInfo) => {
     if (disabled) return;
 
-    // Trigger bet if dragged/flicked upward by more than 50px or flicked with negative velocity
-    if (info.offset.y < -50 || info.velocity.y < -200) {
+    // Only pushing up triggers bet: flicked or dragged upward
+    if (info.offset.y < -35 || info.velocity.y < -150) {
       triggerSuccessBet();
     }
-  };
-
-  const handleClick = () => {
-    if (disabled) return;
-    triggerSuccessBet();
   };
 
   const triggerSuccessBet = () => {
@@ -76,7 +71,6 @@ export default function DraggableChip({
         dragTransition={{ bounceStiffness: 500, bounceDamping: 28 }}
         onDragStart={handleDragStart}
         onDragEnd={handleDragEnd}
-        onClick={handleClick}
         whileHover={{ scale: disabled ? 1 : 1.06 }}
         whileTap={{ scale: disabled ? 1 : 1.12 }}
         className={`w-full h-full cursor-grab active:cursor-grabbing select-none ${

@@ -47,30 +47,30 @@ interface GameBoardTableProps {
 export function renderAvatarIcon(iconName?: string) {
   switch (iconName) {
     case 'Sparkles':
-      return <Sparkles className="w-4 h-4 text-amber-300" />;
+      return <Sparkles className="w-5 h-5 sm:w-6 sm:h-6 text-amber-300" />;
     case 'Crown':
-      return <Crown className="w-4 h-4 text-amber-300" />;
+      return <Crown className="w-5 h-5 sm:w-6 sm:h-6 text-amber-300" />;
     case 'Flame':
-      return <Flame className="w-4 h-4 text-rose-400" />;
+      return <Flame className="w-5 h-5 sm:w-6 sm:h-6 text-rose-400" />;
     case 'Zap':
-      return <Zap className="w-4 h-4 text-yellow-300" />;
+      return <Zap className="w-5 h-5 sm:w-6 sm:h-6 text-yellow-300" />;
     case 'Gem':
-      return <Gem className="w-4 h-4 text-cyan-300" />;
+      return <Gem className="w-5 h-5 sm:w-6 sm:h-6 text-cyan-300" />;
     case 'Cat':
-      return <Cat className="w-4 h-4 text-amber-200" />;
+      return <Cat className="w-5 h-5 sm:w-6 sm:h-6 text-amber-200" />;
     case 'Dog':
-      return <Dog className="w-4 h-4 text-amber-200" />;
+      return <Dog className="w-5 h-5 sm:w-6 sm:h-6 text-amber-200" />;
     case 'Star':
-      return <Star className="w-4 h-4 text-amber-300" />;
+      return <Star className="w-5 h-5 sm:w-6 sm:h-6 text-amber-300" />;
     case 'Heart':
-      return <Heart className="w-4 h-4 text-rose-400" />;
+      return <Heart className="w-5 h-5 sm:w-6 sm:h-6 text-rose-400" />;
     case 'Coffee':
-      return <Coffee className="w-4 h-4 text-amber-100" />;
+      return <Coffee className="w-5 h-5 sm:w-6 sm:h-6 text-amber-100" />;
     case 'Dice5':
-      return <Dice5 className="w-4 h-4 text-amber-200" />;
+      return <Dice5 className="w-5 h-5 sm:w-6 sm:h-6 text-amber-200" />;
     case 'Bot':
     default:
-      return <Bot className="w-4 h-4 text-emerald-300" />;
+      return <Bot className="w-5 h-5 sm:w-6 sm:h-6 text-emerald-300" />;
   }
 }
 
@@ -181,8 +181,10 @@ export default function GameBoardTable({
                         setShowBankModal(true);
                       }
                     }}
-                    className={`font-black text-[10px] ${
-                      isBanker ? 'text-amber-300 underline cursor-pointer hover:text-white' : 'text-amber-200/60'
+                    className={`font-black text-[11px] px-2 py-0.5 rounded-lg transition-all ${
+                      isBanker
+                        ? 'text-amber-200 bg-[#3B070F] border border-[#F59E0B] ring-breath-flash cursor-pointer hover:brightness-125'
+                        : 'text-amber-200/60'
                     }`}
                   >
                     {isBanker ? 'Insert into Bank' : 'Awaiting Dealer...'}
@@ -234,7 +236,7 @@ export default function GameBoardTable({
               <motion.div
                 initial={{ scale: 0 }}
                 animate={{ scale: 1 }}
-                className="bg-gradient-to-r from-[#F59E0B] via-[#FCD34D] to-[#D97706] text-[#451A03] font-black text-[9px] sm:text-[10px] px-2 py-0.5 rounded-full border border-white/80 shadow-md flex items-center gap-0.5"
+                className="bg-gradient-to-r from-[#F59E0B] via-[#FCD34D] to-[#D97706] text-[#451A03] font-black text-xs sm:text-sm px-2.5 py-1 rounded-full border border-white/90 shadow-lg flex items-center gap-1"
               >
                 <span>฿{player.currentBet}</span>
               </motion.div>
@@ -247,7 +249,7 @@ export default function GameBoardTable({
           const total = sortedPlayers.length;
           const angle = (idx / total) * 2 * Math.PI + Math.PI / 2;
           const radiusX = 44;
-          const radiusY = 42;
+          const radiusY = 41;
           const leftPercent = 50 + radiusX * Math.cos(angle);
           const topPercent = 50 + radiusY * Math.sin(angle);
 
@@ -272,7 +274,7 @@ export default function GameBoardTable({
               {/* Seat Avatar & Badges */}
               <div className="relative">
                 <div
-                  className={`w-9 h-9 sm:w-11 sm:h-11 rounded-full flex items-center justify-center shadow-xl border-2 transition-all ${
+                  className={`w-11 h-11 sm:w-13 sm:h-13 rounded-full flex items-center justify-center shadow-xl border-2 transition-all ${
                     isSelected
                       ? 'border-yellow-300 ring-2 ring-yellow-400 scale-105'
                       : player.isBanker
@@ -288,7 +290,7 @@ export default function GameBoardTable({
 
                 {/* Dealer Badge ("D") */}
                 {player.isBanker && (
-                  <div className="absolute -top-1 -right-1 w-4 h-4 sm:w-5 sm:h-5 rounded-full bg-gradient-to-r from-amber-400 to-amber-600 text-[#451A03] font-black text-[9px] sm:text-[10px] flex items-center justify-center border border-white shadow-md z-40 pointer-events-none">
+                  <div className="absolute -top-1 -right-1 w-5 h-5 sm:w-6 sm:h-6 rounded-full bg-gradient-to-r from-amber-400 to-amber-600 text-[#451A03] font-black text-[10px] sm:text-xs flex items-center justify-center border border-white shadow-md z-40 pointer-events-none">
                     D
                   </div>
                 )}
@@ -296,7 +298,7 @@ export default function GameBoardTable({
                 {/* Staged Decision Badge */}
                 {decision && hasActiveBet && (
                   <div
-                    className={`absolute -bottom-1 -right-1 text-[8px] sm:text-[9px] font-black px-1 rounded-full shadow-md uppercase border z-40 ${
+                    className={`absolute -bottom-1 -right-1 text-[9px] sm:text-[10px] font-black px-1.5 py-0.5 rounded-full shadow-md uppercase border z-40 ${
                       decision.outcome === 'WIN'
                         ? 'bg-emerald-600 text-white border-emerald-300'
                         : decision.outcome === 'LOSE'
@@ -310,11 +312,11 @@ export default function GameBoardTable({
               </div>
 
               {/* Player Name & Chips Label - z-40 (HIGHER THAN TABLE) */}
-              <div className="text-center mt-0.5 bg-black/75 px-1.5 py-0.5 rounded-md border border-[#D4AF37]/40 max-w-[75px] sm:max-w-[85px] relative z-40 shadow-lg backdrop-blur-xs">
-                <span className="text-[9px] sm:text-[10px] font-black text-white truncate block">
+              <div className="text-center mt-1 bg-black/85 px-2 py-0.5 rounded-lg border border-[#D4AF37]/50 min-w-[70px] max-w-[95px] sm:max-w-[110px] relative z-40 shadow-xl backdrop-blur-sm">
+                <span className="text-[11px] sm:text-xs font-black text-white truncate block leading-tight">
                   {player.name} {player.id === myPlayerId ? '(You)' : ''}
                 </span>
-                <span className="text-[8px] sm:text-[9px] font-bold text-[#FDE047] block">
+                <span className="text-[10px] sm:text-[11px] font-black text-[#FDE047] block leading-tight">
                   {player.chips}
                 </span>
               </div>
@@ -332,9 +334,13 @@ export default function GameBoardTable({
               setNewBankAmount(tableState.dealerBank > 0 ? tableState.dealerBank : (isHost ? 100 : Math.min(myChips, 20)));
               setShowBankModal(true);
             }}
-            className="px-2.5 py-2 rounded-xl bg-[#2D040A] border border-[#D4AF37]/50 text-amber-200 text-xs font-black flex items-center gap-1 hover:bg-[#430811] transition-all cursor-pointer"
+            className={`px-3 py-2 rounded-xl text-xs font-black flex items-center gap-1.5 transition-all cursor-pointer shadow-md active:scale-95 ${
+              tableState.dealerBank <= 0
+                ? 'bg-gradient-to-r from-[#8B1425] to-[#5C0A17] text-amber-100 border border-[#F59E0B] ring-breath-flash'
+                : 'bg-[#2D040A] border border-[#D4AF37]/50 text-amber-200 hover:bg-[#430811]'
+            }`}
           >
-            <Shield className="w-3.5 h-3.5 text-[#F59E0B]" />
+            <Shield className={`w-3.5 h-3.5 ${tableState.dealerBank <= 0 ? 'text-[#FDE047]' : 'text-[#F59E0B]'}`} />
             <span>{tableState.dealerBank > 0 ? `Bank: ${tableState.dealerBank}` : 'Insert into Bank'}</span>
           </button>
 

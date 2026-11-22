@@ -655,6 +655,10 @@ export default function App() {
               currentBet={myPlayer ? myPlayer.currentBet : 0}
               isBanker={isCurrentBanker}
               isCommitted={myPlayer ? myPlayer.isCommitted : false}
+              hasPendingApprovals={
+                (isCurrentBanker || isHost) &&
+                (tableState.topUpRequests || []).some(r => r.status === 'PENDING')
+              }
               players={tableState.players}
               onRotateBanker={handleRotateBanker}
               onCommitBet={handleCommitBet}
@@ -766,6 +770,7 @@ export default function App() {
           isOpen={showTopUpModal}
           onClose={() => setShowTopUpModal(false)}
           isHost={isHost}
+          isDealer={isCurrentBanker}
           myPlayerId={myPlayerId}
           players={tableState.players}
           thbPerToken={tableState.thbPerToken || 10}
