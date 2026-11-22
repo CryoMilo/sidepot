@@ -1,6 +1,18 @@
-import { TableState, Player, BetOutcome, TablePhase, DebtRecord } from '../types';
+import {
+  TableState,
+  Player,
+  TablePhase,
+  HandDecisionOutcome,
+  BetMultiplier,
+  StagedDecision,
+  PlayerRoundResult,
+  RoundRecord,
+  TopUpRequest,
+  ActionLogEntry,
+  BetOutcome,
+} from '../types';
 
-const AVATAR_COLORS = [
+export const AVATAR_COLORS = [
   '#0284C7', // Sky
   '#D97706', // Amber
   '#E11D48', // Rose
@@ -8,19 +20,64 @@ const AVATAR_COLORS = [
   '#7C3AED', // Violet
   '#EA580C', // Orange
   '#DB2777', // Pink
+  '#10B981', // Emerald light
+  '#F59E0B', // Amber light
 ];
 
-export function createInitialTable(roomId: string, hostName: string, buyIn: number): TableState {
+export const AVATAR_ICONS = [
+  'Bot',
+  'Sparkles',
+  'Crown',
+  'Flame',
+  'Zap',
+  'Gem',
+  'Cat',
+  'Dog',
+  'Star',
+  'Heart',
+  'Coffee',
+  'Dice5',
+];
+
+export function getPlayerIcon(name: string, id: string): string {
+  let hash = 0;
+  const str = name + id;
+  for (let i = 0; i < str.length; i++) {
+    hash = (hash << 5) - hash + str.charCodeAt(i);
+    hash |= 0;
+  }
+  const index = Math.abs(hash) % AVATAR_ICONS.length;
+  return AVATAR_ICONS[index];
+}
+
+export function generateRoomCode(): string {
+  const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'; // 5 chars without ambiguous 0/O, 1/I
+  let code = '';
+  for (let i = 0; i < 5; i++) {
+    code += chars.charAt(Math.floor(Math.random() * chars.length));
+  }
+  return code;
+}
+
+export function createInitialTable(
+  roomId: string,
+  hostName: string,
+  buyIn: number = 0,
+  thbPerToken: number = 10,
+  hostQrUrl?: string,
+  dealerRotationFrequency: number = 5
+): TableState {
   const hostId = 'host-' + Math.random().toString(36).substring(2, 9);
   const hostPlayer: Player = {
     id: hostId,
     name: hostName,
     avatarColor: AVATAR_COLORS[0],
-    chips: buyIn,
+    avatarIcon: getPlayerIcon(hostName, hostId),
+    chips: buyIn > 0 ? buyIn : 100, // Host bank starter
     currentBet: 0,
     isBanker: true,
     isConnected: true,
-    totalBuyIn: buyIn,
+    totalBuyIn: buyIn > 0 ? buyIn : 100,
     isCommitted: false,
   };
 
@@ -31,11 +88,28 @@ export function createInitialTable(roomId: string, hostName: string, buyIn: numb
     roundNumber: 1,
     pot: 0,
     defaultBuyIn: buyIn,
+    thbPerToken: thbPerToken > 0 ? thbPerToken : 10,
+    hostQrUrl,
+    dealerRotationFrequency: dealerRotationFrequency > 0 ? dealerRotationFrequency : 5,
+    dealerRoundsPlayed: 0,
+    dealerBank: buyIn > 0 ? buyIn : 100,
     players: {
       [hostId]: hostPlayer,
     },
-    debts: [],
     phase: 'BETTING',
+    topUpRequests: [],
+    roundHistory: [],
+    logs: [
+      {
+        id: 'log-' + Math.random().toString(36).substring(2, 9),
+        roundNumber: 1,
+        timestamp: Date.now(),
+        type: 'DEALER_BANK_SET',
+        description: `Room created by ${hostName}. Initial dealer bank: ${buyIn > 0 ? buyIn : 100} tokens.`,
+      },
+    ],
+    stagedDecisions: {},
+    debts: [],
   };
 }
 
@@ -58,11 +132,12 @@ export function addPlayer(state: TableState, playerId: string, name: string): Ta
     id: playerId,
     name,
     avatarColor: AVATAR_COLORS[colorIndex],
-    chips: state.defaultBuyIn,
+    avatarIcon: getPlayerIcon(name, playerId),
+    chips: state.defaultBuyIn || 0,
     currentBet: 0,
     isBanker: false,
     isConnected: true,
-    totalBuyIn: state.defaultBuyIn,
+    totalBuyIn: state.defaultBuyIn || 0,
     isCommitted: false,
   };
 
@@ -141,181 +216,403 @@ export function resetPlayerBet(state: TableState, playerId: string): TableState 
   };
 }
 
-export function transferTokensAsDebt(
-  state: TableState,
-  lenderId: string,
-  borrowerId: string,
-  amount: number
-): TableState {
-  const lender = state.players[lenderId];
-  const borrower = state.players[borrowerId];
+/* =========================================================================
+   TOP-UP & CASH-OUT SYSTEM (Replaces debt loan)
+   ========================================================================= */
 
-  if (!lender || !borrower || lenderId === borrowerId || amount <= 0 || lender.chips < amount) {
-    return state;
+export function requestTopUp(
+  state: TableState,
+  playerId: string,
+  tokens: number,
+  type: 'TOPUP' | 'CASHOUT'
+): TableState {
+  const player = state.players[playerId];
+  if (!player || tokens <= 0) return state;
+
+  if (type === 'CASHOUT' && player.chips < tokens) {
+    return state; // Cannot cash out more tokens than held
   }
 
-  const newDebt: DebtRecord = {
-    id: 'debt-' + Math.random().toString(36).substring(2, 9),
-    lenderId,
-    lenderName: lender.name,
-    borrowerId,
-    borrowerName: borrower.name,
-    amount,
-    status: 'UNPAID',
+  const thbAmount = tokens * (state.thbPerToken || 10);
+  const newRequest: TopUpRequest = {
+    id: 'req-' + Math.random().toString(36).substring(2, 9),
+    playerId,
+    playerName: player.name,
+    tokens,
+    thbAmount,
+    type,
+    status: 'PENDING',
     createdAt: Date.now(),
   };
 
   return {
     ...state,
-    debts: [...(state.debts || []), newDebt],
-    players: {
-      ...state.players,
-      [lenderId]: {
-        ...lender,
-        chips: lender.chips - amount,
-      },
-      [borrowerId]: {
-        ...borrower,
-        chips: borrower.chips + amount,
-      },
-    },
+    topUpRequests: [...(state.topUpRequests || []), newRequest],
   };
 }
 
-export function repayDebt(
-  state: TableState,
-  debtId: string,
-  borrowerId: string
-): TableState {
-  const debt = (state.debts || []).find(
-    d => d.id === debtId && d.borrowerId === borrowerId && d.status === 'UNPAID'
-  );
-  if (!debt) return state;
+export function approveTopUp(state: TableState, requestId: string): TableState {
+  const req = (state.topUpRequests || []).find(r => r.id === requestId && r.status === 'PENDING');
+  if (!req) return state;
 
-  const borrower = state.players[borrowerId];
-  const lender = state.players[debt.lenderId];
+  const player = state.players[req.playerId];
+  if (!player) return state;
 
-  if (!borrower || !lender || borrower.chips < debt.amount) {
-    return state;
+  let updatedChips = player.chips;
+  let updatedTotalBuyIn = player.totalBuyIn;
+
+  if (req.type === 'TOPUP') {
+    updatedChips += req.tokens;
+    updatedTotalBuyIn += req.tokens;
+  } else {
+    // CASHOUT
+    if (player.chips < req.tokens) return state;
+    updatedChips -= req.tokens;
+    updatedTotalBuyIn = Math.max(0, updatedTotalBuyIn - req.tokens);
   }
 
-  const updatedDebts = state.debts.map(d =>
-    d.id === debtId ? { ...d, status: 'REPAID' as const, repaidAt: Date.now() } : d
+  const updatedRequests = state.topUpRequests.map(r =>
+    r.id === requestId ? { ...r, status: 'APPROVED' as const, resolvedAt: Date.now() } : r
+  );
+
+  const logEntry: ActionLogEntry = {
+    id: 'log-' + Math.random().toString(36).substring(2, 9),
+    roundNumber: state.roundNumber,
+    timestamp: Date.now(),
+    type: req.type,
+    description:
+      req.type === 'TOPUP'
+        ? `${player.name} bought ${req.tokens} tokens for ฿${req.thbAmount}.`
+        : `${player.name} cashed out ${req.tokens} tokens for ฿${req.thbAmount}.`,
+    details: {
+      playerId: player.id,
+      playerName: player.name,
+      tokens: req.tokens,
+      thbAmount: req.thbAmount,
+    },
+  };
+
+  return {
+    ...state,
+    topUpRequests: updatedRequests,
+    players: {
+      ...state.players,
+      [player.id]: {
+        ...player,
+        chips: updatedChips,
+        totalBuyIn: updatedTotalBuyIn,
+      },
+    },
+    logs: [logEntry, ...(state.logs || [])],
+  };
+}
+
+export function rejectTopUp(state: TableState, requestId: string): TableState {
+  const updatedRequests = (state.topUpRequests || []).map(r =>
+    r.id === requestId ? { ...r, status: 'REJECTED' as const, resolvedAt: Date.now() } : r
   );
 
   return {
     ...state,
-    debts: updatedDebts,
-    latestRepaymentAlert: {
-      debtId,
-      lenderId: debt.lenderId,
-      borrowerName: borrower.name,
-      amount: debt.amount,
-    },
-    players: {
-      ...state.players,
-      [borrowerId]: {
-        ...borrower,
-        chips: borrower.chips - debt.amount,
-      },
-      [debt.lenderId]: {
-        ...lender,
-        chips: lender.chips + debt.amount,
-      },
-    },
+    topUpRequests: updatedRequests,
   };
 }
 
-export function clearRepaymentAlert(state: TableState): TableState {
-  return {
-    ...state,
-    latestRepaymentAlert: undefined,
-  };
-}
+/* =========================================================================
+   DEALER BANK & STAGED DECISION LOGIC
+   ========================================================================= */
 
-export function resolvePlayerBet(state: TableState, playerId: string, outcome: BetOutcome): TableState {
-  const player = state.players[playerId];
+export function setDealerBank(state: TableState, amount: number): TableState {
+  if (amount < 0) return state;
   const banker = state.players[state.bankerId];
 
-  if (!player || !banker || player.isBanker || player.currentBet === 0) {
-    return state;
-  }
-
-  const bet = player.currentBet;
-  let playerChipDelta = 0;
-  let bankerChipDelta = 0;
-
-  switch (outcome) {
-    case 'WIN_1X':
-      // Player gets back bet + 1x from banker
-      playerChipDelta = bet * 2;
-      bankerChipDelta = -bet;
-      break;
-    case 'SHAN_2X':
-      // Player gets back bet + 2x from banker
-      playerChipDelta = bet * 3;
-      bankerChipDelta = -(bet * 2);
-      break;
-    case 'MEE_3X':
-      // Player gets back bet + 3x from banker
-      playerChipDelta = bet * 4;
-      bankerChipDelta = -(bet * 3);
-      break;
-    case 'COLLECT':
-      // Banker keeps on-table bet (1x); player gets 0 back
-      playerChipDelta = 0;
-      bankerChipDelta = bet;
-      break;
-    case 'COLLECT_2X': {
-      // Dealer Shan (2x): Banker keeps on-table bet + collects additional 1x from player's stack
-      const extra2x = Math.min(player.chips, bet);
-      playerChipDelta = -extra2x;
-      bankerChipDelta = bet + extra2x;
-      break;
-    }
-    case 'COLLECT_3X': {
-      // Dealer Mee (3x): Banker keeps on-table bet + collects additional 2x from player's stack
-      const extra3x = Math.min(player.chips, bet * 2);
-      playerChipDelta = -extra3x;
-      bankerChipDelta = bet + extra3x;
-      break;
-    }
-    case 'PUSH':
-      // Push: Bet returned to player without gain/loss
-      playerChipDelta = bet;
-      bankerChipDelta = 0;
-      break;
-  }
+  const logEntry: ActionLogEntry = {
+    id: 'log-' + Math.random().toString(36).substring(2, 9),
+    roundNumber: state.roundNumber,
+    timestamp: Date.now(),
+    type: 'DEALER_BANK_SET',
+    description: `Dealer ${banker ? banker.name : 'Banker'} set bankroll to ${amount} tokens.`,
+    details: {
+      tokens: amount,
+    },
+  };
 
   return {
     ...state,
-    pot: Math.max(0, state.pot - bet),
-    players: {
-      ...state.players,
-      [playerId]: {
-        ...player,
-        chips: player.chips + playerChipDelta,
-        currentBet: 0,
-        isCommitted: false,
-      },
-      [state.bankerId]: {
-        ...banker,
-        chips: banker.chips + bankerChipDelta,
-      },
+    dealerBank: amount,
+    logs: [logEntry, ...(state.logs || [])],
+  };
+}
+
+export function stagePlayerDecision(
+  state: TableState,
+  playerId: string,
+  outcome: HandDecisionOutcome,
+  multiplier: BetMultiplier
+): TableState {
+  return {
+    ...state,
+    stagedDecisions: {
+      ...(state.stagedDecisions || {}),
+      [playerId]: { outcome, multiplier },
     },
   };
 }
+
+export function clearStagedDecisions(state: TableState): TableState {
+  return {
+    ...state,
+    stagedDecisions: {},
+    debts: [],
+  };
+}
+
+export function calculatePotentialPayout(state: TableState): {
+  requiredPayout: number;
+  canCover: boolean;
+  surplusOrDeficit: number;
+} {
+  let requiredPayout = 0;
+  const staged = state.stagedDecisions || {};
+
+  for (const [pId, p] of Object.entries(state.players)) {
+    if (p.isBanker || p.currentBet <= 0) continue;
+    const decision = staged[pId];
+    if (decision && decision.outcome === 'WIN') {
+      requiredPayout += p.currentBet * decision.multiplier;
+    }
+  }
+
+  const available = state.dealerBank || 0;
+  return {
+    requiredPayout,
+    canCover: requiredPayout <= available,
+    surplusOrDeficit: available - requiredPayout,
+  };
+}
+
+/* =========================================================================
+   SETTLE ROUND (MANUAL MULTIPLIER & BANK PAYOUT CEILING)
+   ========================================================================= */
+
+export function settleRoundMulti(state: TableState): TableState {
+  const banker = state.players[state.bankerId];
+  if (!banker) return state;
+
+  const coverage = calculatePotentialPayout(state);
+  if (!coverage.canCover) {
+    // The dealer can never pay out more than the bank holds!
+    return state;
+  }
+
+  const staged = state.stagedDecisions || {};
+  const results: PlayerRoundResult[] = [];
+  const updatedPlayers: Record<string, Player> = { ...state.players };
+
+  let dealerChipDelta = 0;
+  let dealerBankDelta = 0;
+  let potDeducted = 0;
+
+  for (const [pId, player] of Object.entries(state.players)) {
+    if (player.isBanker || player.currentBet <= 0) continue;
+
+    const bet = player.currentBet;
+    potDeducted += bet;
+
+    const decision: StagedDecision = staged[pId] || { outcome: 'DRAW', multiplier: 1 };
+    let tokenDelta = 0;
+
+    if (decision.outcome === 'WIN') {
+      // Player gets back original on-table bet + (bet * multiplier) profit from dealer
+      const profit = bet * decision.multiplier;
+      tokenDelta = profit;
+      dealerChipDelta -= profit;
+      dealerBankDelta -= profit;
+
+      updatedPlayers[pId] = {
+        ...player,
+        chips: player.chips + bet + profit,
+        currentBet: 0,
+        isCommitted: false,
+      };
+    } else if (decision.outcome === 'LOSE') {
+      // Player loses on-table bet.
+      // If multiplier > 1, dealer collects extra (multiplier - 1) * bet from player's stack, capped by player's chips
+      let extraLost = 0;
+      if (decision.multiplier > 1) {
+        extraLost = Math.min(player.chips, (decision.multiplier - 1) * bet);
+      }
+      const totalLost = bet + extraLost;
+      tokenDelta = -totalLost;
+      dealerChipDelta += totalLost;
+      dealerBankDelta += totalLost;
+
+      updatedPlayers[pId] = {
+        ...player,
+        chips: player.chips - extraLost,
+        currentBet: 0,
+        isCommitted: false,
+      };
+    } else {
+      // DRAW: Player refunded on-table bet without profit/loss
+      tokenDelta = 0;
+      updatedPlayers[pId] = {
+        ...player,
+        chips: player.chips + bet,
+        currentBet: 0,
+        isCommitted: false,
+      };
+    }
+
+    results.push({
+      playerId: pId,
+      playerName: player.name,
+      bet,
+      outcome: decision.outcome,
+      multiplier: decision.multiplier,
+      tokenDelta,
+    });
+  }
+
+  // Update dealer's chips and bank
+  const startingBank = state.dealerBank;
+  const endingBank = Math.max(0, startingBank + dealerBankDelta);
+
+  updatedPlayers[state.bankerId] = {
+    ...banker,
+    chips: Math.max(0, banker.chips + dealerChipDelta),
+    currentBet: 0,
+    isCommitted: false,
+  };
+
+  const roundRecord: RoundRecord = {
+    roundNumber: state.roundNumber,
+    timestamp: Date.now(),
+    dealerId: state.bankerId,
+    dealerName: banker.name,
+    startingBank,
+    endingBank,
+    results,
+  };
+
+  const logEntry: ActionLogEntry = {
+    id: 'log-' + Math.random().toString(36).substring(2, 9),
+    roundNumber: state.roundNumber,
+    timestamp: Date.now(),
+    type: 'ROUND_SETTLED',
+    description: `Round ${state.roundNumber} settled by Dealer ${banker.name}. Bank: ${startingBank} → ${endingBank} (${dealerBankDelta >= 0 ? '+' : ''}${dealerBankDelta}).`,
+  };
+
+  const nextRoundsPlayed = (state.dealerRoundsPlayed || 0) + 1;
+
+  return {
+    ...state,
+    pot: Math.max(0, state.pot - potDeducted),
+    dealerBank: endingBank,
+    dealerRoundsPlayed: nextRoundsPlayed,
+    players: updatedPlayers,
+    stagedDecisions: {},
+    roundHistory: [roundRecord, ...(state.roundHistory || [])],
+    logs: [logEntry, ...(state.logs || [])],
+    roundNumber: state.roundNumber + 1,
+    phase: 'BETTING',
+  };
+}
+
+/* =========================================================================
+   EDIT ROUND RESULTS (WITH DELTA COMPENSATION & AUDIT TRAIL)
+   ========================================================================= */
+
+export function editRoundResult(
+  state: TableState,
+  roundNumber: number,
+  newResults: PlayerRoundResult[],
+  editorName: string,
+  reason?: string
+): TableState {
+  const roundIndex = (state.roundHistory || []).findIndex(r => r.roundNumber === roundNumber);
+  if (roundIndex === -1) return state;
+
+  const oldRound = state.roundHistory[roundIndex];
+  const dealer = state.players[oldRound.dealerId];
+  if (!dealer) return state;
+
+  const updatedPlayers = { ...state.players };
+  let netDealerDelta = 0;
+
+  // Calculate delta for each player
+  for (const newRes of newResults) {
+    const oldRes = oldRound.results.find(r => r.playerId === newRes.playerId);
+    const oldDelta = oldRes ? oldRes.tokenDelta : 0;
+    const playerDiff = newRes.tokenDelta - oldDelta;
+
+    if (playerDiff !== 0 && updatedPlayers[newRes.playerId]) {
+      const p = updatedPlayers[newRes.playerId];
+      updatedPlayers[newRes.playerId] = {
+        ...p,
+        chips: Math.max(0, p.chips + playerDiff),
+      };
+      // Zero-sum counter for dealer
+      netDealerDelta -= playerDiff;
+    }
+  }
+
+  // Apply counter delta to dealer
+  updatedPlayers[oldRound.dealerId] = {
+    ...dealer,
+    chips: Math.max(0, dealer.chips + netDealerDelta),
+  };
+
+  const newEndingBank = Math.max(0, oldRound.endingBank + netDealerDelta);
+
+  const updatedRound: RoundRecord = {
+    ...oldRound,
+    endingBank: newEndingBank,
+    results: newResults,
+    isEdited: true,
+    editHistory: [
+      ...(oldRound.editHistory || []),
+      {
+        timestamp: Date.now(),
+        editedBy: editorName,
+        previousResults: oldRound.results,
+        reason,
+      },
+    ],
+  };
+
+  const updatedHistory = [...state.roundHistory];
+  updatedHistory[roundIndex] = updatedRound;
+
+  const logEntry: ActionLogEntry = {
+    id: 'log-' + Math.random().toString(36).substring(2, 9),
+    roundNumber,
+    timestamp: Date.now(),
+    type: 'ROUND_EDITED',
+    description: `Round ${roundNumber} edited by ${editorName}. Adjusted ${newResults.length} player outcomes.`,
+  };
+
+  return {
+    ...state,
+    players: updatedPlayers,
+    roundHistory: updatedHistory,
+    logs: [logEntry, ...(state.logs || [])],
+  };
+}
+
+/* =========================================================================
+   BANKER ROTATION
+   ========================================================================= */
 
 export function rotateBanker(state: TableState, newBankerId: string): TableState {
   const targetPlayer = state.players[newBankerId];
   if (!targetPlayer || targetPlayer.chips < MIN_BANKER_TOKENS) return state;
 
   let potDelta = 0;
-
   const updatedPlayers: Record<string, Player> = {};
+
   for (const [id, p] of Object.entries(state.players)) {
     if (id === newBankerId) {
-      // If newly crowned banker had an active bet, refund it to their stack
       const refundedBet = p.currentBet;
       potDelta += refundedBet;
       updatedPlayers[id] = {
@@ -333,22 +630,32 @@ export function rotateBanker(state: TableState, newBankerId: string): TableState
     }
   }
 
+  const logEntry: ActionLogEntry = {
+    id: 'log-' + Math.random().toString(36).substring(2, 9),
+    roundNumber: state.roundNumber,
+    timestamp: Date.now(),
+    type: 'DEALER_ROTATED',
+    description: `Dealer rotated to ${targetPlayer.name}.`,
+  };
+
   return {
     ...state,
     bankerId: newBankerId,
+    dealerRoundsPlayed: 0,
+    dealerBank: targetPlayer.chips, // Defaults to new dealer's stack
+    stagedDecisions: {},
     pot: Math.max(0, state.pot - potDelta),
     players: updatedPlayers,
+    logs: [logEntry, ...(state.logs || [])],
   };
 }
 
 export function advancePhase(state: TableState, nextPhase: TablePhase): TableState {
   let nextRound = state.roundNumber;
-  let nextPot = state.pot;
   const updatedPlayers: Record<string, Player> = { ...state.players };
 
   if (nextPhase === 'BETTING') {
     nextRound += 1;
-    // Reset bet committed flag for all players
     for (const id of Object.keys(updatedPlayers)) {
       updatedPlayers[id] = {
         ...updatedPlayers[id],
@@ -360,7 +667,6 @@ export function advancePhase(state: TableState, nextPhase: TablePhase): TableSta
   return {
     ...state,
     roundNumber: nextRound,
-    pot: nextPot,
     players: updatedPlayers,
     phase: nextPhase,
   };
@@ -401,11 +707,172 @@ export function adjustPlayerChips(state: TableState, playerId: string, amount: n
 
 export function verifyZeroSum(state: TableState): { balanced: boolean; netDiscrepancy: number } {
   const totalBuyIns = Object.values(state.players).reduce((sum, p) => sum + p.totalBuyIn, 0);
-  const totalChipsInPlay = Object.values(state.players).reduce((sum, p) => sum + p.chips, 0) + state.pot;
+  const totalChipsInPlay =
+    Object.values(state.players).reduce((sum, p) => sum + p.chips, 0) + state.pot;
   const netDiscrepancy = totalChipsInPlay - totalBuyIns;
 
   return {
     balanced: netDiscrepancy === 0,
     netDiscrepancy,
   };
+}
+
+// Backward compatibility helper for resolvePlayerBet if needed in tests
+export function resolvePlayerBet(state: TableState, playerId: string, outcome: BetOutcome): TableState {
+  const player = state.players[playerId];
+  const banker = state.players[state.bankerId];
+
+  if (!player || !banker || player.isBanker || player.currentBet === 0) {
+    return state;
+  }
+
+  const bet = player.currentBet;
+  let playerChipDelta = 0;
+  let bankerChipDelta = 0;
+
+  switch (outcome) {
+    case 'WIN_1X':
+      playerChipDelta = bet * 2;
+      bankerChipDelta = -bet;
+      break;
+    case 'SHAN_2X':
+      playerChipDelta = bet * 3;
+      bankerChipDelta = -(bet * 2);
+      break;
+    case 'MEE_3X':
+      playerChipDelta = bet * 4;
+      bankerChipDelta = -(bet * 3);
+      break;
+    case 'COLLECT':
+      playerChipDelta = 0;
+      bankerChipDelta = bet;
+      break;
+    case 'COLLECT_2X': {
+      const extra2x = Math.min(player.chips, bet);
+      playerChipDelta = -extra2x;
+      bankerChipDelta = bet + extra2x;
+      break;
+    }
+    case 'COLLECT_3X': {
+      const extra3x = Math.min(player.chips, bet * 2);
+      playerChipDelta = -extra3x;
+      bankerChipDelta = bet + extra3x;
+      break;
+    }
+    case 'PUSH':
+      playerChipDelta = bet;
+      bankerChipDelta = 0;
+      break;
+  }
+
+  return {
+    ...state,
+    pot: Math.max(0, state.pot - bet),
+    players: {
+      ...state.players,
+      [playerId]: {
+        ...player,
+        chips: player.chips + playerChipDelta,
+        currentBet: 0,
+        isCommitted: false,
+      },
+      [state.bankerId]: {
+        ...banker,
+        chips: Math.max(0, banker.chips + bankerChipDelta),
+      },
+    },
+  };
+}
+
+export function transferTokensAsDebt(
+  state: TableState,
+  lenderId: string,
+  borrowerId: string,
+  amount: number
+): TableState {
+  const lender = state.players[lenderId];
+  const borrower = state.players[borrowerId];
+
+  if (!lender || !borrower || lenderId === borrowerId || amount <= 0 || lender.chips < amount) {
+    return state;
+  }
+
+  const newDebt = {
+    id: 'debt-' + Math.random().toString(36).substring(2, 9),
+    lenderId,
+    lenderName: lender.name,
+    borrowerId,
+    borrowerName: borrower.name,
+    amount,
+    status: 'UNPAID' as const,
+    createdAt: Date.now(),
+  };
+
+  return {
+    ...state,
+    debts: [...((state as any).debts || []), newDebt],
+    players: {
+      ...state.players,
+      [lenderId]: {
+        ...lender,
+        chips: lender.chips - amount,
+      },
+      [borrowerId]: {
+        ...borrower,
+        chips: borrower.chips + amount,
+      },
+    },
+  } as TableState;
+}
+
+export function repayDebt(
+  state: TableState,
+  debtId: string,
+  borrowerId: string
+): TableState {
+  const debts = (state as any).debts || [];
+  const debt = debts.find(
+    (d: any) => d.id === debtId && d.borrowerId === borrowerId && d.status === 'UNPAID'
+  );
+  if (!debt) return state;
+
+  const borrower = state.players[borrowerId];
+  const lender = state.players[debt.lenderId];
+
+  if (!borrower || !lender || borrower.chips < debt.amount) {
+    return state;
+  }
+
+  const updatedDebts = debts.map((d: any) =>
+    d.id === debtId ? { ...d, status: 'REPAID', repaidAt: Date.now() } : d
+  );
+
+  return {
+    ...state,
+    debts: updatedDebts,
+    latestRepaymentAlert: {
+      debtId,
+      lenderId: debt.lenderId,
+      borrowerName: borrower.name,
+      amount: debt.amount,
+    },
+    players: {
+      ...state.players,
+      [borrowerId]: {
+        ...borrower,
+        chips: borrower.chips - debt.amount,
+      },
+      [debt.lenderId]: {
+        ...lender,
+        chips: lender.chips + debt.amount,
+      },
+    },
+  } as TableState;
+}
+
+export function clearRepaymentAlert(state: TableState): TableState {
+  return {
+    ...state,
+    latestRepaymentAlert: undefined,
+  } as TableState;
 }

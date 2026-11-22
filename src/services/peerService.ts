@@ -15,6 +15,13 @@ export type NetworkMessageType =
   | 'REPAY_DEBT'
   | 'CLEAR_REPAYMENT_ALERT'
   | 'ADVANCE_PHASE'
+  | 'REQUEST_TOP_UP'
+  | 'APPROVE_TOP_UP'
+  | 'REJECT_TOP_UP'
+  | 'SET_DEALER_BANK'
+  | 'STAGE_DECISION'
+  | 'SETTLE_ROUND'
+  | 'EDIT_ROUND'
   | 'PING'
   | 'PONG';
 
@@ -137,3 +144,54 @@ export function createPeerInstance(id?: string): Peer {
     },
   });
 }
+
+const SESSION_STORAGE_KEY = 'sidepot_user_session';
+
+export interface UserSession {
+  roomId: string;
+  playerId: string;
+  playerName: string;
+  isHost: boolean;
+}
+
+let memorySession: string | null = null;
+
+export function saveSessionToStorage(session: UserSession): void {
+  try {
+    const serialized = JSON.stringify(session);
+    if (typeof window !== 'undefined' && window.localStorage) {
+      window.localStorage.setItem(SESSION_STORAGE_KEY, serialized);
+    } else {
+      memorySession = serialized;
+    }
+  } catch {
+    // Best-effort
+  }
+}
+
+export function loadSessionFromStorage(): UserSession | null {
+  try {
+    let raw: string | null = null;
+    if (typeof window !== 'undefined' && window.localStorage) {
+      raw = window.localStorage.getItem(SESSION_STORAGE_KEY);
+    } else {
+      raw = memorySession;
+    }
+    if (!raw) return null;
+    return JSON.parse(raw) as UserSession;
+  } catch {
+    return null;
+  }
+}
+
+export function clearSessionStorage(): void {
+  try {
+    if (typeof window !== 'undefined' && window.localStorage) {
+      window.localStorage.removeItem(SESSION_STORAGE_KEY);
+    }
+    memorySession = null;
+  } catch {
+    // Best-effort
+  }
+}
+

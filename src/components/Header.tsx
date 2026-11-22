@@ -1,29 +1,33 @@
-import { Crown, QrCode, LogOut, FileText, Wifi, WifiOff } from 'lucide-react';
+import { LogOut, FileText, Wifi, WifiOff } from 'lucide-react';
 
 interface HeaderProps {
   roomId: string;
-  bankerName: string;
+  bankerName?: string;
   isConnected: boolean;
   onOpenQr: () => void;
-  onOpenSettlement: () => void;
+  onOpenActionLogs: () => void;
   onLeaveRoom: () => void;
   onReconnect?: () => void;
 }
 
 export default function Header({
   roomId,
-  bankerName,
   isConnected,
   onOpenQr,
-  onOpenSettlement,
+  onOpenActionLogs,
   onLeaveRoom,
   onReconnect,
 }: HeaderProps) {
   return (
-    <header className="flex items-center justify-between w-full max-w-md mx-auto py-1 px-1 mb-1">
-      {/* Brand & Room Info */}
+    <header className="flex items-center justify-between w-full max-w-md mx-auto py-1 px-1 mb-1 shrink-0 select-none">
+      {/* Brand & Room Info (Clickable to open QR share modal) */}
       <div className="flex items-center gap-2">
-        <div className="flex items-center gap-1.5 bg-[#0a291c]/90 px-3 py-1.5 rounded-full border border-[#D4AF37]/50 shadow-md backdrop-blur-sm">
+        <button
+          type="button"
+          onClick={onOpenQr}
+          title="Tap to show Room QR Code & share link"
+          className="flex items-center gap-1.5 bg-[#250409]/90 hover:bg-[#38060E] px-3 py-1.5 rounded-full border border-[#D4AF37]/50 shadow-md backdrop-blur-sm cursor-pointer transition-all active:scale-95"
+        >
           {/* Custom SVG Vault / Jar Icon */}
           <svg
             className="w-4 h-4"
@@ -39,13 +43,14 @@ export default function Header({
             <circle cx="12" cy="14" r="2" />
           </svg>
           <span className="text-sm font-black text-amber-100 tracking-tight">SidePot</span>
-          <span className="text-[10px] font-black bg-[#061c13] text-[#FDE047] px-1.5 py-0.5 rounded border border-[#F59E0B]/50">
+          <span className="text-[10px] font-black bg-[#160205] text-[#FDE047] px-1.5 py-0.5 rounded border border-[#F59E0B]/50">
             #{roomId}
           </span>
-        </div>
+        </button>
 
         {/* Connection status indicator */}
         <button
+          type="button"
           onClick={onReconnect}
           disabled={isConnected}
           title={isConnected ? 'P2P Connected' : 'Disconnected — click to reconnect'}
@@ -68,32 +73,20 @@ export default function Header({
 
       {/* Right Controls */}
       <div className="flex items-center gap-1.5">
-        {/* Dealer Identity (Visible to all players on mobile & desktop) */}
-        <div className="flex items-center gap-1.5 text-[11px] font-bold text-amber-200 bg-[#0c3323]/90 px-2.5 py-1 rounded-full border border-[#D4AF37]/50 shadow-xs">
-          <Crown className="w-3.5 h-3.5 text-[#F59E0B] shrink-0" />
-          <span className="max-w-[70px] xs:max-w-[100px] truncate font-extrabold">{bankerName}</span>
-        </div>
-
         <button
-          onClick={onOpenQr}
-          title="Show Room QR Code"
-          className="w-8 h-8 rounded-full bg-[#0a291c]/90 border border-[#D4AF37]/50 flex items-center justify-center text-amber-200 hover:bg-[#12422e] hover:text-white shadow-sm transition-transform active:scale-95"
-        >
-          <QrCode className="w-4 h-4" />
-        </button>
-
-        <button
-          onClick={onOpenSettlement}
-          title="End of Night Settlement"
-          className="w-8 h-8 rounded-full bg-[#0a291c]/90 border border-[#D4AF37]/50 flex items-center justify-center text-amber-200 hover:bg-[#12422e] hover:text-white shadow-sm transition-transform active:scale-95"
+          type="button"
+          onClick={onOpenActionLogs}
+          title="Action & Payment Logs"
+          className="w-8 h-8 rounded-full bg-[#250409]/90 border border-[#D4AF37]/50 flex items-center justify-center text-amber-200 hover:bg-[#3D0A13] hover:text-white shadow-sm transition-transform active:scale-95 cursor-pointer"
         >
           <FileText className="w-4 h-4" />
         </button>
 
         <button
+          type="button"
           onClick={onLeaveRoom}
           title="Leave Table"
-          className="w-8 h-8 rounded-full bg-[#3B0707] border border-[#EF4444]/50 flex items-center justify-center text-[#FCA5A5] hover:bg-[#5C0A0A] shadow-sm transition-transform active:scale-95"
+          className="w-8 h-8 rounded-full bg-[#3B0707] border border-[#EF4444]/50 flex items-center justify-center text-[#FCA5A5] hover:bg-[#5C0A0A] shadow-sm transition-transform active:scale-95 cursor-pointer"
         >
           <LogOut className="w-3.5 h-3.5" />
         </button>

@@ -23,17 +23,17 @@ export default function GoldenJar({
   const mood = getJarMood(playerChips);
 
   return (
-    <div className="w-full max-w-md mx-auto flex flex-row sm:flex-col items-center justify-between sm:justify-center px-3.5 py-1.5 sm:px-0 sm:py-2 bg-gradient-to-r from-[#072418] via-[#0C3523] to-[#072418] sm:bg-none sm:bg-transparent rounded-2xl sm:rounded-none border-2 border-[#D4AF37]/50 sm:border-0 shadow-lg sm:shadow-none select-none shrink-0 transition-all">
-      {/* Cute Fluffy Golden Pot: Compact on mobile row, grand hero on sm+ */}
+    <div className="w-full max-w-md mx-auto flex flex-row items-center justify-between px-3.5 py-1.5 bg-gradient-to-r from-[#072418] via-[#0C3523] to-[#072418] rounded-2xl border-2 border-[#D4AF37]/50 shadow-lg select-none shrink-0 transition-all">
+      {/* Golden Jar Mascot Icon: Compact horizontal row for all screens */}
       <motion.div
         className="relative cursor-pointer shrink-0 flex items-center justify-center"
         onClick={onClick}
         animate={
           isDancing
             ? {
-                y: [0, -16, 0, -9, 0, -3, 0],
-                rotate: [0, -8, 6, -4, 2, 0],
-                scale: [1, 1.15, 0.92, 1.08, 0.95, 1],
+                y: [0, -12, 0, -6, 0, -2, 0],
+                rotate: [0, -6, 5, -3, 2, 0],
+                scale: [1, 1.1, 0.95, 1.05, 0.98, 1],
               }
             : {
                 y: [0, -2, 0],
@@ -46,7 +46,7 @@ export default function GoldenJar({
         }
       >
         <svg
-          className="w-14 h-14 sm:w-28 sm:h-28 md:w-36 md:h-36 drop-shadow-[0_8px_16px_rgba(217,119,6,0.3)] sm:drop-shadow-[0_16px_28px_rgba(217,119,6,0.32)] transition-all"
+          className="w-12 h-12 drop-shadow-[0_4px_12px_rgba(217,119,6,0.35)] transition-all"
           viewBox="0 0 120 120"
           fill="none"
           xmlns="http://www.w3.org/2000/svg"
@@ -182,13 +182,13 @@ export default function GoldenJar({
         </svg>
       </motion.div>
 
-      {/* "Your Pot" Label & Token Count: Right-aligned on mobile row, centered on sm+ */}
-      <div className="text-right sm:text-center shrink-0 sm:mt-2">
-        <span className="text-[10px] sm:text-[11px] font-black uppercase tracking-wider text-[#FDE047] bg-[#B45309]/30 px-2 sm:px-2.5 py-0.5 rounded-full border border-[#F59E0B]/50 shadow-xs">
-          Your Pot
+      {/* "YOUR TOKENS" Label & Token Count: Compact row layout */}
+      <div className="text-right shrink-0">
+        <span className="text-[10px] font-black uppercase tracking-wider text-[#FDE047] bg-[#B45309]/30 px-2 py-0.5 rounded-full border border-[#F59E0B]/50 shadow-xs">
+          Your Tokens
         </span>
-        <div className="text-xl sm:text-3xl md:text-4xl font-black tracking-tight text-white leading-tight mt-0.5 drop-shadow-[0_2px_8px_rgba(245,158,11,0.25)]">
-          {playerChips.toLocaleString()} <span className="text-xs sm:text-sm font-bold text-[#FCD34D]">tokens</span>
+        <div className="text-xl sm:text-2xl font-black tracking-tight text-white leading-tight mt-0.5 drop-shadow-[0_2px_8px_rgba(245,158,11,0.25)]">
+          {playerChips.toLocaleString()} <span className="text-xs font-bold text-[#FCD34D]">tokens</span>
         </div>
       </div>
     </div>

@@ -1,5 +1,5 @@
 import { useState, useRef } from 'react';
-import { Wallet, Crown, RotateCcw, Check, HandCoins, Sliders } from 'lucide-react';
+import { Wallet, Crown, RotateCcw, Check, Coins, Sliders } from 'lucide-react';
 import DraggableChip from './DraggableChip';
 import { playSound } from '../utils/audio';
 
@@ -9,7 +9,7 @@ interface WalletDeckProps {
   isBanker: boolean;
   isCommitted?: boolean;
   onCommitBet: (amount: number) => void;
-  onOpenDebtModal: () => void;
+  onOpenTopUpModal: () => void;
   onAdjustChips?: (amount: number) => void;
 }
 
@@ -32,7 +32,7 @@ export default function WalletDeck({
   isBanker,
   isCommitted = false,
   onCommitBet,
-  onOpenDebtModal,
+  onOpenTopUpModal,
   onAdjustChips,
 }: WalletDeckProps) {
   const [stagedBet, setStagedBet] = useState<number>(0);
@@ -50,7 +50,7 @@ export default function WalletDeck({
     if (isCommitted) return;
     if (availableChips >= amount) {
       setStagedBet(prev => prev + amount);
-      playSound('pop');
+      playSound('clink');
     }
   };
 
@@ -59,7 +59,7 @@ export default function WalletDeck({
     if (stagedBet > 0 && stagedBet <= chips) {
       onCommitBet(stagedBet);
       setStagedBet(0);
-      playSound('win');
+      playSound('clink');
     }
   };
 
@@ -127,12 +127,12 @@ export default function WalletDeck({
   };
 
   return (
-    <div className="bg-[#082217]/95 rounded-[28px] p-3.5 sm:p-4 shadow-[0_12px_36px_rgba(0,0,0,0.6)] border-2 border-[#D4AF37]/50 w-full max-w-md mx-auto touch-none select-none flex flex-col gap-2.5 text-white">
-      {/* Top Header Row: Role Banner & Transfer Action (No Repeating Token Counts) */}
+    <div className="bg-[#180306]/95 rounded-[28px] p-3.5 sm:p-4 shadow-[0_12px_36px_rgba(0,0,0,0.7)] border-2 border-[#D4AF37]/50 w-full max-w-md mx-auto touch-none select-none flex flex-col gap-2.5 text-white">
+      {/* Top Header Row: Role Banner & Top-up / Cash-out Action */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-1.5">
           {isBanker ? (
-            <div className="flex items-center gap-1 text-[11px] font-black text-[#FDE047] bg-[#051c12] px-2.5 py-0.5 rounded-xl border border-[#D4AF37]/50">
+            <div className="flex items-center gap-1 text-[11px] font-black text-[#FDE047] bg-[#2E050B] px-2.5 py-0.5 rounded-xl border border-[#D4AF37]/50">
               <Crown className="w-3.5 h-3.5 text-[#F59E0B]" />
               <span>You are Dealer</span>
             </div>
@@ -149,40 +149,40 @@ export default function WalletDeck({
           )}
         </div>
 
-        {/* Transfer / QR Debts Button */}
+        {/* Top-Up / Cash-Out Button */}
         <button
           type="button"
-          onClick={onOpenDebtModal}
-          className="text-[10px] font-black text-[#FDE047] bg-[#0a291c] hover:bg-[#12422e] px-2.5 py-1 rounded-xl border border-[#D4AF37]/50 flex items-center gap-1 transition-all active:scale-95 shadow-xs"
+          onClick={onOpenTopUpModal}
+          className="text-[10px] font-black text-[#FDE047] bg-[#2C060D] hover:bg-[#3D0A14] px-2.5 py-1 rounded-xl border border-[#D4AF37]/50 flex items-center gap-1 transition-all active:scale-95 shadow-xs"
         >
-          <HandCoins className="w-3.5 h-3.5 text-[#F59E0B]" />
-          <span>Transfer / Debts</span>
+          <Coins className="w-3.5 h-3.5 text-[#F59E0B]" />
+          <span>Top-up / Cash-out</span>
         </button>
       </div>
 
       {/* Dealer vs Player View: Dealers cover bets and do not place bets */}
       {isBanker ? (
-        <div className="bg-[#051a11] border border-[#D4AF37]/40 rounded-2xl p-3 flex items-center justify-between gap-2 shadow-xs">
+        <div className="bg-[#240409] border border-[#D4AF37]/40 rounded-2xl p-3 flex items-center justify-between gap-2 shadow-xs">
           <div className="flex items-center gap-2.5">
-            <div className="w-8 h-8 rounded-full bg-[#0a291c] border border-[#D4AF37]/60 flex items-center justify-center shrink-0">
+            <div className="w-8 h-8 rounded-full bg-[#3B070F] border border-[#D4AF37]/60 flex items-center justify-center shrink-0">
               <Crown className="w-4 h-4 text-[#F59E0B]" />
             </div>
             <div>
               <div className="text-xs font-black text-amber-100">Dealer Bankroll</div>
-              <div className="text-[10px] font-bold text-emerald-200/70">
-                Covering all bets on the table. Manage resolutions above.
+              <div className="text-[10px] font-bold text-amber-200/70">
+                Covering all bets on the table. Click players to mark decisions.
               </div>
             </div>
           </div>
-          <span className="text-[10px] font-black text-[#FDE047] bg-[#0a291c] px-2.5 py-1 rounded-xl border border-[#D4AF37]/50 shrink-0">
+          <span className="text-[10px] font-black text-[#FDE047] bg-[#3B070F] px-2.5 py-1 rounded-xl border border-[#D4AF37]/50 shrink-0">
             Dealer
           </span>
         </div>
       ) : (
         <>
-          {/* Staged Bet Bar: Completely hidden once committed to save space until next round */}
+          {/* Staged Bet Bar: Hidden once committed to save space until next round */}
           {!isCommitted && (
-            <div className="bg-[#061c13] border border-[#D4AF37]/50 rounded-2xl p-2 flex items-center justify-between gap-2 shadow-sm">
+            <div className="bg-[#240409] border border-[#D4AF37]/50 rounded-2xl p-2 flex items-center justify-between gap-2 shadow-sm">
               <div className="flex flex-col">
                 <div className="text-[10px] font-extrabold text-[#FCD34D] uppercase tracking-wider">
                   Staged Bet
@@ -224,7 +224,7 @@ export default function WalletDeck({
                   className={`p-1.5 rounded-xl border transition-all ${
                     showCustom
                       ? 'bg-gradient-to-r from-[#F59E0B] to-[#D97706] text-[#451A03] border-[#FCD34D]'
-                      : 'bg-[#0a291c] text-amber-200 border-[#D4AF37]/50 hover:bg-[#12422e]'
+                      : 'bg-[#30050B] text-amber-200 border-[#D4AF37]/50 hover:bg-[#450912]'
                   }`}
                 >
                   <Sliders className="w-3.5 h-3.5" />
@@ -235,12 +235,12 @@ export default function WalletDeck({
 
           {/* Custom Amount Bar */}
           {!isCommitted && showCustom && (
-            <div className="p-2 bg-[#051a11] rounded-xl border border-[#D4AF37]/40 flex items-center justify-between gap-2 shadow-sm">
+            <div className="p-2 bg-[#200408] rounded-xl border border-[#D4AF37]/40 flex items-center justify-between gap-2 shadow-sm">
               <div className="flex items-center gap-1">
                 <button
                   type="button"
                   onClick={() => setCustomAmount(prev => Math.max(1, prev - 1))}
-                  className="w-6 h-6 rounded-lg bg-[#0a291c] text-[#FDE047] font-black text-xs flex items-center justify-center border border-[#D4AF37]/50 hover:bg-[#12422e]"
+                  className="w-6 h-6 rounded-lg bg-[#3B070F] text-[#FDE047] font-black text-xs flex items-center justify-center border border-[#D4AF37]/50 hover:bg-[#500A15]"
                 >
                   -
                 </button>
@@ -250,12 +250,12 @@ export default function WalletDeck({
                   max={availableChips}
                   value={customAmount}
                   onChange={e => setCustomAmount(parseInt(e.target.value, 10) || 1)}
-                  className="w-14 text-center text-xs font-black text-white bg-[#072418] border border-[#D4AF37]/50 rounded-lg py-1 focus:outline-none focus:ring-1 focus:ring-[#F59E0B]"
+                  className="w-14 text-center text-xs font-black text-white bg-[#140103] border border-[#D4AF37]/50 rounded-lg py-1 focus:outline-none focus:ring-1 focus:ring-[#F59E0B]"
                 />
                 <button
                   type="button"
                   onClick={() => setCustomAmount(prev => Math.min(availableChips, prev + 1))}
-                  className="w-6 h-6 rounded-lg bg-[#0a291c] text-[#FDE047] font-black text-xs flex items-center justify-center border border-[#D4AF37]/50 hover:bg-[#12422e]"
+                  className="w-6 h-6 rounded-lg bg-[#3B070F] text-[#FDE047] font-black text-xs flex items-center justify-center border border-[#D4AF37]/50 hover:bg-[#500A15]"
                 >
                   +
                 </button>
@@ -273,7 +273,7 @@ export default function WalletDeck({
           )}
 
           {/* Horizontal Scrollable Draggable Casino Chip Rack with Dedicated Tray Styling */}
-          <div className="relative w-full bg-[#04140d] rounded-2xl p-2 sm:p-2.5 border border-[#D4AF37]/35 shadow-inner">
+          <div className="relative w-full bg-[#120104] rounded-2xl p-2 sm:p-2.5 border border-[#D4AF37]/35 shadow-inner">
             <div className="flex gap-4 sm:gap-5 overflow-x-auto no-scrollbar py-1.5 px-2 touch-pan-x items-center">
               {CASINO_DENOMINATIONS.map(denom => (
                 <DraggableChip
