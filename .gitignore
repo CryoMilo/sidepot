@@ -25,3 +25,7 @@ dist-ssr
 
 # Superpowers local state
 .superpowers/
+.agents
+.codex
+.impeccable
+.gemini

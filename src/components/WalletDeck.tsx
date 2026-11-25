@@ -137,18 +137,14 @@ export default function WalletDeck({
 
   return (
     <div className="bg-[#180306]/95 rounded-[28px] p-3.5 sm:p-4 shadow-[0_12px_36px_rgba(0,0,0,0.7)] border-2 border-[#D4AF37]/50 w-full max-w-md mx-auto touch-none select-none flex flex-col gap-2.5 text-white">
-      {/* Top Header Row: Role Banner & Top-up / Cash-out Action */}
-      <div className="flex items-center justify-between">
+      {/* Top Header Row: Role Status & Top-up / Cash-out Action */}
+      <div className="flex items-center justify-between gap-2">
         <div className="flex items-center gap-1.5">
           {isBanker ? (
-            <button
-              type="button"
-              onClick={() => setShowChangeDealerModal(true)}
-              className="flex items-center gap-1.5 text-[11px] font-black text-[#FDE047] bg-gradient-to-r from-[#3D0A14] to-[#250409] hover:brightness-125 px-2.5 py-1 rounded-xl border border-[#D4AF37]/60 shadow-sm transition-transform active:scale-95 cursor-pointer"
-            >
+            <div className="flex items-center gap-1.5 text-[11px] font-black text-[#FDE047] bg-[#2C060D] px-2.5 py-1 rounded-xl border border-[#D4AF37]/40">
               <Crown className="w-3.5 h-3.5 text-[#F59E0B]" />
-              <span>Change Dealer</span>
-            </button>
+              <span>Dealer Mode</span>
+            </div>
           ) : (
             <div className="flex items-center gap-1.5 text-[11px] font-extrabold text-amber-200">
               <Wallet className="w-3.5 h-3.5 text-[#F59E0B]" />
@@ -156,7 +152,7 @@ export default function WalletDeck({
             </div>
           )}
           {isCommitted && currentBet > 0 && (
-            <span className="text-[10px] font-black text-[#34D399] bg-[#064E3B] px-2 py-0.5 rounded-lg border border-[#059669]/60">
+            <span className="text-[10px] font-black text-[#34D399] bg-[#064E3B] px-2 py-0.5 rounded-lg border border-[#059669]/60 tabular-nums">
               Bet: {currentBet}
             </span>
           )}
@@ -166,7 +162,7 @@ export default function WalletDeck({
         <button
           type="button"
           onClick={onOpenTopUpModal}
-          className="relative text-[10px] font-black text-[#FDE047] bg-[#2C060D] hover:bg-[#3D0A14] px-2.5 py-1 rounded-xl border border-[#D4AF37]/50 flex items-center gap-1 transition-all active:scale-95 shadow-xs cursor-pointer"
+          className="relative text-[11px] font-black text-[#FDE047] bg-[#2C060D] hover:bg-[#3D0A14] px-3 py-1.5 rounded-xl border border-[#D4AF37]/50 flex items-center gap-1.5 transition-[transform,background-color] duration-150 active:scale-[0.97] shadow-xs cursor-pointer"
         >
           <Coins className="w-3.5 h-3.5 text-[#F59E0B]" />
           <span>Top-up / Cash-out</span>
@@ -183,22 +179,22 @@ export default function WalletDeck({
 
       {/* Dealer vs Player View: Dealers cover bets and do not place bets */}
       {isBanker ? (
-        <div className="bg-[#240409] border border-[#D4AF37]/40 rounded-2xl p-3 flex items-center justify-between gap-2 shadow-xs">
-          <div className="flex items-center gap-2.5">
-            <div className="w-8 h-8 rounded-full bg-[#3B070F] border border-[#D4AF37]/60 flex items-center justify-center shrink-0">
+        <div className="bg-[#240409] border border-[#D4AF37]/40 rounded-2xl p-3 flex items-center justify-between gap-2.5 shadow-xs">
+          <div className="flex items-center gap-2.5 min-w-0">
+            <div className="w-9 h-9 rounded-full bg-[#3B070F] border border-[#D4AF37]/60 flex items-center justify-center shrink-0">
               <Crown className="w-4 h-4 text-[#F59E0B]" />
             </div>
-            <div>
+            <div className="min-w-0">
               <div className="text-xs font-black text-amber-100">Dealer Bankroll</div>
-              <div className="text-[10px] font-bold text-amber-200/70">
-                Covering all bets on the table. Click players to mark decisions.
+              <div className="text-[11px] font-bold text-amber-200/75 leading-snug">
+                Tap players on the felt to mark outcomes.
               </div>
             </div>
           </div>
           <button
             type="button"
             onClick={() => setShowChangeDealerModal(true)}
-            className="text-[10px] font-black text-[#FDE047] bg-[#3B070F] hover:bg-[#5C0A17] px-2.5 py-1 rounded-xl border border-[#D4AF37]/50 shrink-0 cursor-pointer transition-all active:scale-95 shadow-xs"
+            className="text-[11px] font-black text-[#FDE047] bg-[#3B070F] hover:bg-[#5C0A17] px-3 py-2 rounded-xl border border-[#D4AF37]/50 shrink-0 cursor-pointer transition-[transform,background-color] duration-150 active:scale-[0.97] shadow-xs"
           >
             Change Dealer
           </button>
@@ -207,12 +203,12 @@ export default function WalletDeck({
         <>
           {/* Staged Bet Bar: Hidden once committed to save space until next round */}
           {!isCommitted && (
-            <div className="bg-[#240409] border border-[#D4AF37]/50 rounded-2xl p-2 flex items-center justify-between gap-2 shadow-sm">
-              <div className="flex flex-col">
+            <div className="bg-[#240409] border border-[#D4AF37]/50 rounded-2xl p-2.5 flex items-center justify-between gap-2 shadow-sm">
+              <div className="flex flex-col pl-0.5">
                 <div className="text-[10px] font-extrabold text-[#FCD34D] uppercase tracking-wider">
                   Staged Bet
                 </div>
-                <div className="text-sm font-black text-white">
+                <div className="text-sm font-black text-white tabular-nums">
                   {stagedBet}{' '}
                   <span className="text-[10px] font-bold text-[#FDE047]">tokens</span>
                 </div>
@@ -227,9 +223,9 @@ export default function WalletDeck({
                   onPointerUp={handleResetPointerUp}
                   onPointerLeave={handleResetPointerUp}
                   onContextMenu={e => e.preventDefault()}
-                  className="bg-[#3B0707] hover:bg-[#5C0A0A] disabled:opacity-30 text-[#FCA5A5] border border-[#DC2626]/50 font-black text-xs py-1.5 px-3 rounded-xl flex items-center gap-1 transition-all active:scale-95 select-none"
+                  className="h-9 bg-[#3B0707] hover:bg-[#5C0A0A] disabled:opacity-30 text-[#FCA5A5] border border-[#DC2626]/50 font-black text-xs px-3 rounded-xl flex items-center gap-1 transition-[transform,background-color,opacity] duration-150 active:scale-[0.97] select-none cursor-pointer disabled:cursor-default"
                 >
-                  <RotateCcw className="w-3 h-3" />
+                  <RotateCcw className="w-3.5 h-3.5" />
                   <span>Reset</span>
                 </button>
 
@@ -237,7 +233,7 @@ export default function WalletDeck({
                   type="button"
                   disabled={stagedBet <= 0}
                   onClick={handleCommit}
-                  className="bg-gradient-to-r from-[#F59E0B] via-[#EAB308] to-[#D97706] hover:brightness-110 disabled:opacity-35 text-[#451A03] font-black text-xs py-1.5 px-3.5 rounded-xl flex items-center gap-1 shadow-md transition-all active:scale-95"
+                  className="h-9 bg-gradient-to-r from-[#F59E0B] via-[#EAB308] to-[#D97706] hover:brightness-110 disabled:opacity-35 text-[#451A03] font-black text-xs px-3.5 rounded-xl flex items-center gap-1 shadow-md transition-[transform,filter,opacity] duration-150 active:scale-[0.97] cursor-pointer disabled:cursor-default"
                 >
                   <Check className="w-3.5 h-3.5 stroke-[2.5]" />
                   <span>Commit</span>
@@ -246,13 +242,15 @@ export default function WalletDeck({
                 <button
                   type="button"
                   onClick={() => setShowCustom(!showCustom)}
-                  className={`p-1.5 rounded-xl border transition-all ${
+                  aria-label="Toggle custom bet amount"
+                  title="Custom bet amount"
+                  className={`w-9 h-9 rounded-xl border flex items-center justify-center transition-[transform,background-color,border-color] duration-150 active:scale-[0.97] cursor-pointer ${
                     showCustom
                       ? 'bg-gradient-to-r from-[#F59E0B] to-[#D97706] text-[#451A03] border-[#FCD34D]'
                       : 'bg-[#30050B] text-amber-200 border-[#D4AF37]/50 hover:bg-[#450912]'
                   }`}
                 >
-                  <Sliders className="w-3.5 h-3.5" />
+                  <Sliders className="w-4 h-4" />
                 </button>
               </div>
             </div>
@@ -261,26 +259,29 @@ export default function WalletDeck({
           {/* Custom Amount Bar */}
           {!isCommitted && showCustom && (
             <div className="p-2 bg-[#200408] rounded-xl border border-[#D4AF37]/40 flex items-center justify-between gap-2 shadow-sm">
-              <div className="flex items-center gap-1">
+              <div className="flex items-center gap-1.5">
                 <button
                   type="button"
+                  aria-label="Decrease custom bet amount"
                   onClick={() => setCustomAmount(prev => Math.max(1, prev - 1))}
-                  className="w-6 h-6 rounded-lg bg-[#3B070F] text-[#FDE047] font-black text-xs flex items-center justify-center border border-[#D4AF37]/50 hover:bg-[#500A15]"
+                  className="w-8 h-8 rounded-lg bg-[#3B070F] text-[#FDE047] font-black text-sm flex items-center justify-center border border-[#D4AF37]/50 hover:bg-[#500A15] active:scale-[0.95] transition-[transform,background-color] duration-150 cursor-pointer"
                 >
                   -
                 </button>
                 <input
                   type="number"
+                  inputMode="numeric"
                   min={1}
                   max={availableChips}
                   value={customAmount}
                   onChange={e => setCustomAmount(parseInt(e.target.value, 10) || 1)}
-                  className="w-14 text-center text-xs font-black text-white bg-[#140103] border border-[#D4AF37]/50 rounded-lg py-1 focus:outline-none focus:ring-1 focus:ring-[#F59E0B]"
+                  className="w-16 h-8 text-center text-sm font-black text-white bg-[#140103] border border-[#D4AF37]/50 rounded-lg tabular-nums focus:outline-none focus:ring-1 focus:ring-[#F59E0B]"
                 />
                 <button
                   type="button"
+                  aria-label="Increase custom bet amount"
                   onClick={() => setCustomAmount(prev => Math.min(availableChips, prev + 1))}
-                  className="w-6 h-6 rounded-lg bg-[#3B070F] text-[#FDE047] font-black text-xs flex items-center justify-center border border-[#D4AF37]/50 hover:bg-[#500A15]"
+                  className="w-8 h-8 rounded-lg bg-[#3B070F] text-[#FDE047] font-black text-sm flex items-center justify-center border border-[#D4AF37]/50 hover:bg-[#500A15] active:scale-[0.95] transition-[transform,background-color] duration-150 cursor-pointer"
                 >
                   +
                 </button>
@@ -290,9 +291,9 @@ export default function WalletDeck({
                 type="button"
                 onClick={handleCustomAdd}
                 disabled={availableChips < customAmount || customAmount <= 0}
-                className="bg-gradient-to-r from-[#F59E0B] to-[#D97706] hover:brightness-110 disabled:opacity-35 text-[#451A03] font-black text-xs py-1 px-3 rounded-lg flex items-center gap-1 shadow-sm"
+                className="h-8 bg-gradient-to-r from-[#F59E0B] to-[#D97706] hover:brightness-110 disabled:opacity-35 text-[#451A03] font-black text-xs px-3 rounded-lg flex items-center gap-1 shadow-sm transition-[transform,filter,opacity] duration-150 active:scale-[0.97] cursor-pointer tabular-nums"
               >
-                <span>+ Stage {customAmount} Tokens</span>
+                <span>+ Stage {customAmount}</span>
               </button>
             </div>
           )}
@@ -337,15 +338,17 @@ export default function WalletDeck({
         {showChangeDealerModal && (
           <div className="fixed inset-0 z-50 bg-black/85 backdrop-blur-sm flex items-center justify-center p-4">
             <motion.div
-              initial={{ scale: 0.9, opacity: 0 }}
+              initial={{ scale: 0.95, opacity: 0 }}
               animate={{ scale: 1, opacity: 1 }}
-              exit={{ scale: 0.9, opacity: 0 }}
+              exit={{ scale: 0.95, opacity: 0 }}
+              transition={{ duration: 0.2, ease: [0.23, 1, 0.32, 1] }}
               className="bg-gradient-to-b from-[#1C0206] via-[#2D040A] to-[#120104] border-2 border-[#D4AF37]/60 rounded-3xl p-5 max-w-xs w-full shadow-2xl text-white relative"
             >
               <button
                 type="button"
+                aria-label="Close modal"
                 onClick={() => setShowChangeDealerModal(false)}
-                className="absolute top-3 right-3 text-amber-200/80 hover:text-white cursor-pointer"
+                className="absolute top-3.5 right-3.5 w-8 h-8 rounded-full bg-[#3B070F] border border-[#D4AF37]/50 flex items-center justify-center text-amber-200 hover:bg-[#500A15] hover:text-white transition-[transform,background-color] duration-150 active:scale-[0.95] cursor-pointer"
               >
                 <X className="w-4 h-4" />
               </button>
@@ -358,7 +361,7 @@ export default function WalletDeck({
                 Select a player to crown as the new Dealer:
               </p>
 
-              <div className="flex flex-col gap-2 max-h-60 overflow-y-auto pr-1">
+              <div className="flex flex-col gap-2 max-h-60 overflow-y-auto touch-pan-y pr-1">
                 {Object.values(players || {})
                   .filter(p => !p.isBanker)
                   .map(p => (

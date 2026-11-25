@@ -76,11 +76,13 @@ export default function TopUpModal({
 
   return (
     <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4">
-      <div className="bg-gradient-to-b from-[#160205] via-[#2E040B] to-[#120104] border-2 border-[#D4AF37]/50 rounded-[32px] max-w-sm w-full p-5 shadow-[0_20px_50px_rgba(0,0,0,0.85)] relative text-white max-h-[92vh] overflow-y-auto">
+      <div className="bg-gradient-to-b from-[#160205] via-[#2E040B] to-[#120104] border-2 border-[#D4AF37]/50 rounded-[32px] max-w-sm w-full p-5 shadow-[0_20px_50px_rgba(0,0,0,0.85)] relative text-white max-h-[92vh] overflow-y-auto touch-pan-y">
         {/* Close Button */}
         <button
+          type="button"
+          aria-label="Close modal"
           onClick={onClose}
-          className="absolute top-4 right-4 w-8 h-8 rounded-full bg-[#3B070F] border border-[#D4AF37]/50 flex items-center justify-center text-amber-200 hover:bg-[#500A15] hover:text-white"
+          className="absolute top-4 right-4 w-8 h-8 rounded-full bg-[#3B070F] border border-[#D4AF37]/50 flex items-center justify-center text-amber-200 hover:bg-[#500A15] hover:text-white transition-[transform,background-color] duration-150 active:scale-[0.95] cursor-pointer"
         >
           <X className="w-4 h-4" />
         </button>

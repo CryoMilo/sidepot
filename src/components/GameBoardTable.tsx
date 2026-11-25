@@ -148,29 +148,29 @@ export default function GameBoardTable({
             <div className="absolute inset-2 sm:inset-3 rounded-[75px] sm:rounded-[105px] border border-[#F59E0B]/20 pointer-events-none" />
 
             {/* CENTER TABLE HUD: Pot, Bankroll, Stint */}
-            <div className="z-10 flex flex-col items-center text-center px-3.5 py-1 sm:py-1.5 bg-black/45 backdrop-blur-xs rounded-2xl border border-[#D4AF37]/35 shadow-md max-w-[190px] sm:max-w-[220px]">
+            <div className="z-10 flex flex-col items-center text-center px-3 py-1 sm:py-1.5 bg-black/50 backdrop-blur-xs rounded-2xl border border-[#D4AF37]/35 shadow-md min-w-[140px] max-w-[168px] sm:max-w-[195px]">
               {/* Table Pot */}
-              <div className="flex items-center gap-1.5 text-amber-200">
+              <div className="flex items-center gap-1 text-amber-200">
                 <Coins className="w-3.5 h-3.5 text-[#FDE047]" />
                 <span className="text-[10px] sm:text-xs font-black uppercase tracking-wider">
                   Table Pot
                 </span>
               </div>
-              <div className="text-lg sm:text-2xl font-black text-white leading-tight drop-shadow-[0_2px_8px_rgba(245,158,11,0.5)]">
+              <div className="text-lg sm:text-2xl font-black text-white leading-tight tabular-nums drop-shadow-[0_2px_8px_rgba(245,158,11,0.5)]">
                 {tableState.pot}{' '}
                 <span className="text-xs font-bold text-[#FCD34D]">tokens</span>
               </div>
 
               {/* Dealer Bank Status */}
-              <div className="mt-0.5 pt-0.5 border-t border-[#D4AF37]/25 w-full flex items-center justify-between text-[10px] sm:text-[11px] font-bold">
+              <div className="mt-0.5 pt-0.5 border-t border-[#D4AF37]/25 w-full flex items-center justify-between gap-2 text-[10px] sm:text-[11px] font-bold">
                 <span className="text-amber-200/80">Bank:</span>
                 {tableState.dealerBank > 0 ? (
                   <span
-                    className={`font-black ${
+                    className={`font-black tabular-nums ${
                       coverage.canCover ? 'text-emerald-300' : 'text-amber-300'
                     }`}
                   >
-                    {tableState.dealerBank} tokens
+                    {tableState.dealerBank}
                   </span>
                 ) : (
                   <button
@@ -181,19 +181,19 @@ export default function GameBoardTable({
                         setShowBankModal(true);
                       }
                     }}
-                    className={`font-black text-[11px] px-2 py-0.5 rounded-lg transition-all ${
+                    className={`font-black text-[10px] px-2 py-0.5 rounded-lg transition-[transform,filter] duration-150 ${
                       isBanker
-                        ? 'text-amber-200 bg-[#3B070F] border border-[#F59E0B] ring-breath-flash cursor-pointer hover:brightness-125'
-                        : 'text-amber-200/60'
+                        ? 'text-amber-200 bg-[#3B070F] border border-[#F59E0B] ring-breath-flash cursor-pointer hover:brightness-125 active:scale-[0.96]'
+                        : 'text-amber-200/60 cursor-default'
                     }`}
                   >
-                    {isBanker ? 'Insert into Bank' : 'Awaiting Dealer...'}
+                    {isBanker ? 'Insert' : 'Awaiting...'}
                   </button>
                 )}
               </div>
 
               {/* Dealer Rotation Stint Counter */}
-              <div className="w-full flex items-center justify-between text-[9px] text-amber-300/70 mt-0.5">
+              <div className="w-full flex items-center justify-between text-[9px] text-amber-300/70 mt-0.5 tabular-nums">
                 <span>Stint:</span>
                 <span className="font-bold">
                   Round {(tableState.dealerRoundsPlayed || 0) + 1} /{' '}
@@ -203,7 +203,7 @@ export default function GameBoardTable({
 
               {/* Bank Cover Warning */}
               {!coverage.canCover && tableState.dealerBank > 0 && (
-                <div className="mt-1 flex items-center gap-1 text-[9px] font-black text-rose-300 bg-rose-950/80 px-1.5 py-0.5 rounded-md border border-rose-600/50">
+                <div className="mt-1 flex items-center gap-1 text-[9px] font-black text-rose-300 bg-rose-950/80 px-1.5 py-0.5 rounded-md border border-rose-600/50 tabular-nums">
                   <AlertTriangle className="w-3 h-3 text-rose-400 shrink-0" />
                   <span>Cap: Needs {coverage.requiredPayout}</span>
                 </div>
@@ -217,8 +217,8 @@ export default function GameBoardTable({
           if (player.currentBet <= 0) return null;
           const total = sortedPlayers.length;
           const angle = (idx / total) * 2 * Math.PI + Math.PI / 2;
-          const betRadiusX = 27;
-          const betRadiusY = 25;
+          const betRadiusX = 30;
+          const betRadiusY = 28;
           const betLeft = 50 + betRadiusX * Math.cos(angle);
           const betTop = 50 + betRadiusY * Math.sin(angle);
 
@@ -234,9 +234,10 @@ export default function GameBoardTable({
               className="z-20 pointer-events-none"
             >
               <motion.div
-                initial={{ scale: 0 }}
-                animate={{ scale: 1 }}
-                className="bg-gradient-to-r from-[#F59E0B] via-[#FCD34D] to-[#D97706] text-[#451A03] font-black text-xs sm:text-sm px-2.5 py-1 rounded-full border border-white/90 shadow-lg flex items-center gap-1"
+                initial={{ scale: 0.85, opacity: 0 }}
+                animate={{ scale: 1, opacity: 1 }}
+                transition={{ duration: 0.18, ease: [0.23, 1, 0.32, 1] }}
+                className="bg-gradient-to-r from-[#F59E0B] via-[#FCD34D] to-[#D97706] text-[#451A03] font-black text-xs sm:text-sm px-2.5 py-0.5 rounded-full border border-white/90 shadow-lg flex items-center gap-1 tabular-nums"
               >
                 <span>฿{player.currentBet}</span>
               </motion.div>
@@ -316,7 +317,7 @@ export default function GameBoardTable({
                 <span className="text-[11px] sm:text-xs font-black text-white truncate block leading-tight">
                   {player.name} {player.id === myPlayerId ? '(You)' : ''}
                 </span>
-                <span className="text-[10px] sm:text-[11px] font-black text-[#FDE047] block leading-tight">
+                <span className="text-[10px] sm:text-[11px] font-black text-[#FDE047] block leading-tight tabular-nums">
                   {player.chips}
                 </span>
               </div>
@@ -327,46 +328,51 @@ export default function GameBoardTable({
 
       {/* DEALER DECISION CONTROLS & SETTLE BUTTON BAR */}
       {isBanker && (
-        <div className="w-full max-w-md mt-2 flex items-center justify-between gap-2 px-2 shrink-0 z-30">
-          <button
-            type="button"
-            onClick={() => {
-              setNewBankAmount(tableState.dealerBank > 0 ? tableState.dealerBank : (isHost ? 100 : Math.min(myChips, 20)));
-              setShowBankModal(true);
-            }}
-            className={`px-3 py-2 rounded-xl text-xs font-black flex items-center gap-1.5 transition-all cursor-pointer shadow-md active:scale-95 ${
-              tableState.dealerBank <= 0
-                ? 'bg-gradient-to-r from-[#8B1425] to-[#5C0A17] text-amber-100 border border-[#F59E0B] ring-breath-flash'
-                : 'bg-[#2D040A] border border-[#D4AF37]/50 text-amber-200 hover:bg-[#430811]'
-            }`}
-          >
-            <Shield className={`w-3.5 h-3.5 ${tableState.dealerBank <= 0 ? 'text-[#FDE047]' : 'text-[#F59E0B]'}`} />
-            <span>{tableState.dealerBank > 0 ? `Bank: ${tableState.dealerBank}` : 'Insert into Bank'}</span>
-          </button>
-
-          {/* "Crown next" button with Rotate icon */}
-          {onRotateBanker && playersList.some(p => !p.isBanker) && (
+        <div className="w-full max-w-md mt-1.5 flex flex-col gap-1.5 px-1 shrink-0 z-30">
+          {/* Secondary Utility Row: Bank & Crown Next */}
+          <div className={`grid gap-2 ${onRotateBanker && playersList.some(p => !p.isBanker) ? 'grid-cols-2' : 'grid-cols-1'}`}>
             <button
               type="button"
               onClick={() => {
-                if (nextCandidate) onRotateBanker(nextCandidate.id);
+                setNewBankAmount(tableState.dealerBank > 0 ? tableState.dealerBank : (isHost ? 100 : Math.min(myChips, 20)));
+                setShowBankModal(true);
               }}
-              title={`Crown next: ${nextCandidate?.name || 'next player'}`}
-              className="px-2.5 py-2 rounded-xl bg-[#2D040A] border border-[#D4AF37]/50 text-amber-200 hover:bg-[#430811] text-xs font-black flex items-center gap-1.5 transition-all shadow-md active:scale-95 cursor-pointer shrink-0"
+              className={`h-9 px-3 rounded-xl text-xs font-black flex items-center justify-center gap-1.5 transition-[transform,background-color,filter] duration-150 cursor-pointer shadow-md active:scale-[0.97] tabular-nums ${
+                tableState.dealerBank <= 0
+                  ? 'bg-gradient-to-r from-[#8B1425] to-[#5C0A17] text-amber-100 border border-[#F59E0B] ring-breath-flash'
+                  : 'bg-[#2D040A] border border-[#D4AF37]/50 text-amber-200 hover:bg-[#430811]'
+              }`}
             >
-              <RotateCw className="w-3.5 h-3.5 text-[#F59E0B]" />
-              <span>Crown next</span>
+              <Shield className={`w-3.5 h-3.5 shrink-0 ${tableState.dealerBank <= 0 ? 'text-[#FDE047]' : 'text-[#F59E0B]'}`} />
+              <span className="truncate">{tableState.dealerBank > 0 ? `Bank: ${tableState.dealerBank}` : 'Insert into Bank'}</span>
             </button>
-          )}
 
+            {/* "Crown next" button with Rotate icon */}
+            {onRotateBanker && playersList.some(p => !p.isBanker) && (
+              <button
+                type="button"
+                onClick={() => {
+                  if (nextCandidate) onRotateBanker(nextCandidate.id);
+                }}
+                title={`Crown next: ${nextCandidate?.name || 'next player'}`}
+                className="h-9 px-3 rounded-xl bg-[#2D040A] border border-[#D4AF37]/50 text-amber-200 hover:bg-[#430811] text-xs font-black flex items-center justify-center gap-1.5 transition-[transform,background-color] duration-150 shadow-md active:scale-[0.97] cursor-pointer"
+              >
+                <RotateCw className="w-3.5 h-3.5 text-[#F59E0B] shrink-0" />
+                <span className="truncate">Crown next</span>
+              </button>
+            )}
+          </div>
+
+          {/* Primary CTA: Settle Round */}
           <button
+            type="button"
             onClick={onSettleRound}
             disabled={activeBetsCount === 0}
-            className="flex-1 py-2 px-3 bg-gradient-to-r from-[#F59E0B] via-[#EAB308] to-[#D97706] hover:brightness-110 disabled:opacity-40 text-[#451A03] font-black text-xs rounded-xl shadow-lg transition-transform active:scale-95 flex items-center justify-center gap-1.5 cursor-pointer"
+            className="w-full h-10 px-4 bg-gradient-to-r from-[#F59E0B] via-[#EAB308] to-[#D97706] hover:brightness-110 disabled:opacity-40 text-[#451A03] font-black text-xs sm:text-sm rounded-xl shadow-lg transition-[transform,filter,opacity] duration-150 active:scale-[0.98] flex items-center justify-center gap-1.5 cursor-pointer disabled:cursor-default tabular-nums"
           >
-            <Check className="w-4 h-4" />
+            <Check className="w-4 h-4 stroke-[2.5]" />
             <span>
-              Settle Round {activeBetsCount > 0 ? `(${activeBetsCount} bets)` : ''}
+              Settle Round {activeBetsCount > 0 ? `(${activeBetsCount} ${activeBetsCount === 1 ? 'bet' : 'bets'})` : ''}
             </span>
           </button>
         </div>
@@ -377,14 +383,17 @@ export default function GameBoardTable({
         {selectedPlayerForDecision && (
           <div className="fixed inset-0 z-50 bg-black/70 backdrop-blur-xs flex items-center justify-center p-4">
             <motion.div
-              initial={{ scale: 0.9, opacity: 0 }}
+              initial={{ scale: 0.95, opacity: 0 }}
               animate={{ scale: 1, opacity: 1 }}
-              exit={{ scale: 0.9, opacity: 0 }}
-              className="bg-gradient-to-b from-[#1C0206] via-[#2D040A] to-[#120104] border-2 border-[#D4AF37]/60 rounded-3xl p-4 max-w-xs w-full shadow-2xl text-white relative"
+              exit={{ scale: 0.95, opacity: 0 }}
+              transition={{ duration: 0.2, ease: [0.23, 1, 0.32, 1] }}
+              className="bg-gradient-to-b from-[#1C0206] via-[#2D040A] to-[#120104] border-2 border-[#D4AF37]/60 rounded-3xl p-5 max-w-xs w-full shadow-2xl text-white relative"
             >
               <button
+                type="button"
+                aria-label="Close modal"
                 onClick={() => setSelectedPlayerForDecision(null)}
-                className="absolute top-3 right-3 text-amber-200/80 hover:text-white"
+                className="absolute top-3.5 right-3.5 w-8 h-8 rounded-full bg-[#3B070F] border border-[#D4AF37]/50 flex items-center justify-center text-amber-200 hover:bg-[#500A15] hover:text-white transition-[transform,background-color] duration-150 active:scale-[0.95] cursor-pointer"
               >
                 <X className="w-4 h-4" />
               </button>
@@ -484,15 +493,17 @@ export default function GameBoardTable({
         {isBankModalOpen && (
           <div className="fixed inset-0 z-50 bg-black/85 backdrop-blur-sm flex items-center justify-center p-4">
             <motion.div
-              initial={{ scale: 0.9, opacity: 0 }}
+              initial={{ scale: 0.95, opacity: 0 }}
               animate={{ scale: 1, opacity: 1 }}
-              exit={{ scale: 0.9, opacity: 0 }}
+              exit={{ scale: 0.95, opacity: 0 }}
+              transition={{ duration: 0.2, ease: [0.23, 1, 0.32, 1] }}
               className="bg-gradient-to-b from-[#1C0206] via-[#2D040A] to-[#120104] border-2 border-[#D4AF37]/60 rounded-3xl p-5 max-w-xs w-full shadow-2xl text-white relative"
             >
               <button
                 type="button"
+                aria-label="Close modal"
                 onClick={() => setShowBankModal(false)}
-                className="absolute top-3 right-3 text-amber-200/80 hover:text-white cursor-pointer"
+                className="absolute top-3.5 right-3.5 w-8 h-8 rounded-full bg-[#3B070F] border border-[#D4AF37]/50 flex items-center justify-center text-amber-200 hover:bg-[#500A15] hover:text-white transition-[transform,background-color] duration-150 active:scale-[0.95] cursor-pointer"
               >
                 <X className="w-4 h-4" />
               </button>
@@ -566,6 +577,7 @@ export default function GameBoardTable({
                     </label>
                     <input
                       type="number"
+                      inputMode="numeric"
                       min={1}
                       max={isHost ? undefined : myChips}
                       value={newBankAmount}
@@ -573,7 +585,7 @@ export default function GameBoardTable({
                         const val = parseInt(e.target.value) || 0;
                         setNewBankAmount(isHost ? Math.max(0, val) : Math.min(myChips, Math.max(0, val)));
                       }}
-                      className="w-full bg-[#140103] border border-[#D4AF37]/50 rounded-xl px-3 py-2 text-sm font-black text-white focus:outline-none focus:ring-2 focus:ring-[#F59E0B]"
+                      className="w-full bg-[#140103] border border-[#D4AF37]/50 rounded-xl px-3 py-2 text-base sm:text-sm font-black text-white tabular-nums focus:outline-none focus:ring-2 focus:ring-[#F59E0B]"
                     />
                   </div>
 

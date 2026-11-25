@@ -186,12 +186,12 @@ export default function GoldenJar({
 
       {/* "YOUR TOKENS" Label & Token Count or 0 Tokens Reminder */}
       {playerChips <= 0 ? (
-        <div className="flex items-center gap-2 shrink-0">
+        <div className="flex items-center gap-2.5 shrink-0">
           <div className="text-right">
-            <span className="text-[10px] font-black uppercase tracking-wider text-rose-300 bg-rose-950/80 px-2 py-0.5 rounded-full border border-rose-600/50 shadow-xs block">
+            <span className="text-[10px] font-black uppercase tracking-wider text-rose-300 bg-rose-950/80 px-2 py-0.5 rounded-full border border-rose-600/50 shadow-xs inline-block">
               You are out of tokens
             </span>
-            <span className="text-[10px] font-bold text-amber-200/70 mt-0.5 block">
+            <span className="text-[10px] font-bold text-amber-200/75 mt-0.5 block">
               Top up to place bets
             </span>
           </div>
@@ -199,7 +199,7 @@ export default function GoldenJar({
             <button
               type="button"
               onClick={onOpenTopUp}
-              className="bg-gradient-to-r from-[#F59E0B] via-[#EAB308] to-[#D97706] hover:brightness-110 text-[#451A03] font-black text-xs px-2.5 py-1.5 rounded-xl shadow-md transition-all active:scale-95 flex items-center gap-1 cursor-pointer shrink-0"
+              className="bg-gradient-to-r from-[#F59E0B] via-[#EAB308] to-[#D97706] hover:brightness-110 text-[#451A03] font-black text-xs px-3 py-2 rounded-xl shadow-md transition-[transform,filter] duration-150 active:scale-[0.97] flex items-center gap-1 cursor-pointer shrink-0"
             >
               <span>+ Top Up</span>
             </button>
@@ -210,7 +210,7 @@ export default function GoldenJar({
           <span className="text-[10px] font-black uppercase tracking-wider text-[#FDE047] bg-[#B45309]/30 px-2 py-0.5 rounded-full border border-[#F59E0B]/50 shadow-xs">
             Your Tokens
           </span>
-          <div className="text-xl sm:text-2xl font-black tracking-tight text-white leading-tight mt-0.5 drop-shadow-[0_2px_8px_rgba(245,158,11,0.25)]">
+          <div className="text-xl sm:text-2xl font-black tracking-tight text-white leading-tight mt-0.5 tabular-nums drop-shadow-[0_2px_8px_rgba(245,158,11,0.25)]">
             {playerChips.toLocaleString()} <span className="text-xs font-bold text-[#FCD34D]">tokens</span>
           </div>
         </div>
